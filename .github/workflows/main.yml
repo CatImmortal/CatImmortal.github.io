@@ -1,34 +1,48 @@
-# This is a basic workflow to help you get started with Actions
-
+# workflow name
 name: Hexo Blog CI
 
-# Controls when the workflow will run
-on:
-  # Triggers the workflow on push or pull request events but only for the hexo branch
+# master branch on push, auto run
+on: 
   push:
-    branches: [ hexo ]
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+    branches:
+      - main
+      
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+  build: 
+    runs-on: ubuntu-latest 
+        
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
-        run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+    # check it to your workflow can access it
+    # from: https://github.com/actions/checkout
+    - name: Checkout Repository master branch
+      uses: actions/checkout@main 
+      
+    # from: https://github.com/actions/setup-node  
+    - name: Setup Node.js 10.x 
+      uses: actions/setup-node@master
+      with:
+        node-version: "10.x"
+    
+    - name: Setup Hexo Dependencies
+      run: |
+        npm install hexo-cli -g
+        npm install
+    
+    - name: Setup Deploy Private Key
+      env:
+        HEXO_DEPLOY_PRIVATE_KEY: ${{ secrets.HEXO_DEPLOY_PRIVATE_KEY }}
+      run: |
+        mkdir -p ~/.ssh/
+        echo "$HEXO_DEPLOY_PRIVATE_KEY" > ~/.ssh/id_rsa 
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan github.com >> ~/.ssh/known_hosts
+        
+    - name: Setup Git Infomation
+      run: | 
+        git config --global user.name 'CatImmortal' 
+        git config --global user.email '1304085906@qq.com'
+    - name: Deploy Hexo 
+      run: |
+        hexo clean
+        hexo generate 
+        hexo deploy
