@@ -42,6 +42,7 @@ copy:
 social:
   fab fa-github: https://github.com/CatImmortal || Github
   fas fa-envelope: mailto:1304085906@qq.com || Email
+  fab fa-qq: tencent://message/?uin=1304085906&Site=Sambow&Menu=yes || QQ
 
 # search (搜索)
 # --------------------------------------
@@ -54,7 +55,7 @@ algolia_search:
 
 # Local search
 local_search:
-  enable: false
+  enable: true
 
 # Math (數學)
 # --------------------------------------
@@ -154,7 +155,7 @@ post_meta:
 
 # wordcount (字數統計)
 wordcount:
-  enable: false
+  enable: true
   post_wordcount: true
   min2read: true
   total_wordcount: true
@@ -259,14 +260,14 @@ comments:
   # Up to two comments system, the first will be shown as default
   # Choose: Disqus/Disqusjs/Livere/Gitalk/Valine/Waline/Utterances/Facebook Comments/Twikoo
   use:
-  # - Valine
+   - Twikoo
   # - Disqus
   text: true # Display the comment name next to the button
   # lazyload: The comment system will be load when comment element enters the browser's viewport.
   # If you set it to true, the comment count will be invalid
-  lazyload: false
-  count: false # Display comment count in post's top_img
-  card_post_count: false # Display comment count in Home Page
+  lazyload: true
+  count: true # Display comment count in post's top_img
+  card_post_count: true # Display comment count in Home Page
 
 # disqus
 # https://disqus.com/
@@ -357,9 +358,9 @@ facebook_comments:
 # Twikoo
 # https://github.com/imaegoo/twikoo
 twikoo:
-  envId:
+  envId: https://twikoo-weld.vercel.app/
   region:
-  visitor: false
+  visitor: true
   option:
 
 # Chat Services
@@ -501,7 +502,7 @@ tag_ui: # 留空或 index
 # Website Background (設置網站背景)
 # can set it to color or image (可設置圖片 或者 顔色)
 # The formal of image: url(http://xxxxxx.com/xxx.jpg)
-background:
+background: url(/img/bg.jpg)
 
 # Footer Background
 footer_bg: false
@@ -603,11 +604,11 @@ hr_icon:
 
 # the subtitle on homepage (主頁subtitle)
 subtitle:
-  enable: false
+  enable: true
   # Typewriter Effect (打字效果)
   effect: true
   # loop (循環打字)
-  loop: true
+  loop: false
   # source調用第三方服務
   # source: false 關閉調用
   # source: 1  調用搏天api的隨機語錄（簡體）
@@ -621,6 +622,7 @@ subtitle:
   # 開頭不允許轉義字元，如需要，請把整個句子用雙引號包住
   # 如果關閉打字效果，subtitle只會顯示sub的第一行文字
   sub:
+    - 固执的夏虫&#44;汲取着美梦解渴
 
 # Loading Animation (加載動畫)
 preloader: false
@@ -832,7 +834,9 @@ css_prefix: true
 # 插入代码到头部 </head> 之前 和 底部 </body> 之前
 inject:
   head:
-    # - <link rel="stylesheet" href="/xxx.css">
+    # - <link rel="stylesheet" href="/xxx.css">backgrou
+    - <link rel="stylesheet" href="/css/custom/copyright.css">
+    - <link rel="stylesheet" href="/css/custom/index.7dde3304.css">
   bottom:
     # - <script src="xxxx"></script>
 
