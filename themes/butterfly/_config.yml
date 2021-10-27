@@ -79,11 +79,11 @@ katex:
 # --------------------------------------
 
 # Favicon（網站圖標）
-favicon: /img/head.jpg
+favicon: https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/head.jpg
 
 # Avatar (頭像)
 avatar:
-  img: /img/head.jpg
+  img: https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/head.jpg
   effect: false
 
 # Disable all banner image
@@ -93,7 +93,7 @@ disable_top_img: false
 index_img: 
 
 # If the banner of page not setting, it will show the top_img
-default_top_img: /img/top_image.jpg
+default_top_img: https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/top_image.jpg
 
 # The banner image of archive page
 archive_img:
@@ -502,7 +502,7 @@ tag_ui: # 留空或 index
 # Website Background (設置網站背景)
 # can set it to color or image (可設置圖片 或者 顔色)
 # The formal of image: url(http://xxxxxx.com/xxx.jpg)
-background: url(/img/bg.jpg)
+background: url(https://console.cloud.tencent.com/cos5/bucket?type=object&tab=objectDetail&bucket=cathole-1307936347&path=%252Fbg.jpg&region=ap-guangzhou)
 
 # Footer Background
 footer_bg: false

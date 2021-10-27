@@ -4,8 +4,8 @@ date: 2021-10-25 01:08:51
 tags: ILRuntime
 categories: 程序
 description: 关于ILRuntime的反射与泛型中类型系统的简要概述
-top_img: /img/ilruntime-sysytem-top-img.png
-cover: /img/ilruntime-sysytem-top-img.png
+top_img: https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/ILRuntimeTypeSystem/ilruntime-type-sysytem.png
+cover: https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/ILRuntimeTypeSystem/ilruntime-type-sysytem.png
 ---
 
 
@@ -112,7 +112,7 @@ Util.Test<HotfixClass>();  //输出ILTypeInstance
 
 
 
-![](/img/ilruntime-sysytem-top-img.png)
+![](https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/ILRuntimeTypeSystem/ilruntime-type-sysytem.png)
 
 
 
