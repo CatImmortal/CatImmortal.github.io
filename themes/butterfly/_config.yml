@@ -502,7 +502,7 @@ tag_ui: # 留空或 index
 # Website Background (設置網站背景)
 # can set it to color or image (可設置圖片 或者 顔色)
 # The formal of image: url(http://xxxxxx.com/xxx.jpg)
-background: url(https://console.cloud.tencent.com/cos5/bucket?type=object&tab=objectDetail&bucket=cathole-1307936347&path=%252Fbg.jpg&region=ap-guangzhou)
+background: url(https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/bg.jpg)
 
 # Footer Background
 footer_bg: false
