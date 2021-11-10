@@ -91,7 +91,7 @@ Bundle级别的依赖管理之所以能运转，完全得益于Unity底层的对
 
 想要进行Asset级别的依赖管理，就需要抛弃Unity提供的AssetBundleManifest那一套，使用自定义的资源清单，以[CatAsset](https://github.com/CatImmortal/CatAsset)为例，其资源清单结构如下：
 
-```c#
+```csharp
     /// <summary>
     /// CatAsset资源清单
     /// </summary>

@@ -109,7 +109,7 @@ Rebuild是指当UI自身发生变化时，从C#层发出的UI重建（比如缩�
 
 脚本代码如下：
 
-```c#
+```csharp
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -265,7 +265,7 @@ Overdraw即过度绘制，意为一个像素被反复绘制了多次，这种情
 
 解决方案是通过继承Image组件重写OnPopulateMesh方法，将顶点信息清空
 
-```
+```csharp
 using UnityEngine;
 using System.Collections;
 

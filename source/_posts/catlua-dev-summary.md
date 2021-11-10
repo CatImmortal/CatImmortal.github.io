@@ -45,7 +45,7 @@ cover: https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatLuaDevSummary
 
 Chunk定义如下：
 
-```C#
+```csharp
 	/// <summary>
     /// lua的二进制字节码chunk
     /// </summary>
@@ -91,7 +91,7 @@ Chunk被视为自动拥有一个主函数，而在其中定义的任何变量与
 
 函数定义如下：
 
-```c#
+```csharp
  	/// <summary>
     /// 函数原型
     /// </summary>
@@ -224,7 +224,7 @@ CatLua则是采用**表驱动**的写法，将Lua指令与其相关参数及其�
 
 Instruction定义如下：
 
-```c#
+```csharp
  /// <summary>
     /// 指令
     /// </summary>
@@ -259,7 +259,7 @@ Instruction定义如下：
 
 InstructionConfig定义如下：
 
-```c#
+```csharp
  	/// <summary>
     /// 指令配置
     /// </summary>
@@ -307,7 +307,7 @@ InstructionConfig定义如下：
 
 这样对指令的执行就变成了在循环中查表
 
-```
+```csharp
 while (true)
 {
 	//不断取出指令执行
@@ -324,7 +324,7 @@ while (true)
 
 Lua中有多种数据类型，如nil、布尔、数字、Table、函数等，这些数据类型在CatLua中都被统一封装为LuaDataUnion，其定义如下：
 
-```c#
+```csharp
     /// <summary>
     /// Lua数据的模拟Union
     /// </summary>
@@ -400,7 +400,7 @@ Table作为Lua中唯一的数据容器，可以说是十分万能的存在，其
 
 LuaTable定义如下：
 
-```c#
+```csharp
  	/// <summary>
     /// Lua中的Table数据结构
     /// </summary>
@@ -468,7 +468,7 @@ end
 
 闭包的定义如下：
 
-```c#
+```csharp
     /// <summary>
     /// 闭包
     /// </summary>
@@ -521,7 +521,7 @@ end
 
 如print函数：
 
-```c#
+```csharp
  private static int Print(LuaState vm, int argsNum)
         {
             string s = string.Empty;
@@ -551,7 +551,7 @@ C#闭包其固定参数为LuaState和参数个数，返回值则为该函数的�
 
 Upvalue的定义如下：
 
-```c#
+```csharp
 public class Upvalue
     {
         public Upvalue(LuaDataUnion value,bool isOpen = false,int globalStackIndex = 0)
@@ -620,7 +620,7 @@ public class Upvalue
 
 其定义如下：
 
-```c#
+```csharp
     /// <summary>
     /// Lua虚拟栈
     /// </summary>
@@ -695,7 +695,7 @@ Lua虚拟栈的本质就是使用LuaDataUnion数组来模拟栈，并记录栈�
 
 LuaState可理解为Lua虚拟机对象，其主要持有一个LuaStack作为全局虚拟栈，以及一个LuaTable作为全局注册表，定义如下：
 
-```c#
+```csharp
     /// <summary>
     /// Lua解释器核心
     /// </summary>
@@ -797,7 +797,7 @@ func1()
 
 栈帧的定义如下：
 
-```C#
+```csharp
 /// <summary>
     /// 函数调用栈帧
     /// </summary>
@@ -887,7 +887,7 @@ func1()
 2. 执行Lua函数调用
 3. Lua函数调用后
 
-```c#
+```csharp
 PreLuaFuncCall(argsNum);
 ExcuteLuaFuncCall();
 PostLuaFuncCall(resultNum);
@@ -899,7 +899,7 @@ PostLuaFuncCall(resultNum);
 
 接下来会以下述代码中func1调用func2的流程来进行讲解
 
-```
+```lua
 local function func1(){
     func2(1)
 }
@@ -937,7 +937,7 @@ func1()
 
 PreLuaFuncCall完整代码如下：
 
-```c#
+```csharp
         /// <summary>
         /// 为Lua函数调用作准备，将被调函数和参数压入新栈帧内
         /// </summary>
@@ -987,7 +987,7 @@ PreLuaFuncCall完整代码如下：
 
 执行函数调用部分处理，就是通过一个while true循环不断取出指令执行，然后在碰到Return指令的时候结束循环就可以了
 
-```c#
+```csharp
 		/// <summary>
         /// 执行Lua函数调用
         /// </summary>
@@ -1031,7 +1031,7 @@ PreLuaFuncCall完整代码如下：
 
 PostLuaFuncCall完整代码如下：
 
-```c#
+```csharp
         /// <summary>
         /// Lua函数调用完成后，将被调函数栈帧的栈顶返回值压入主调函数栈帧的栈顶
         /// </summary>

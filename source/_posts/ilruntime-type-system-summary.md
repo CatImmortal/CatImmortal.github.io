@@ -24,7 +24,7 @@ cover: https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/ILRuntimeTypeSys
 
 # 热更层往主工程传递实例
 
-```C#
+```csharp
 /// <summary>
 /// 主工程类型
 /// </summary>
@@ -54,7 +54,7 @@ public class HotfixClass
 }
 ```
 
-```C#
+```csharp
 //热更层调用
 MainClass mc = new MainClass();
 HotfixClass hc = new HotfixClass();
@@ -72,7 +72,7 @@ Util.Test(hc);  //输出ILTypeInstance
 
 # 热更层调用主工程泛型方法
 
-```C#
+```csharp
 /// <summary>
 /// 主工程工具类
 /// </summary>
@@ -87,7 +87,7 @@ public static class Util
 }
 ```
 
-```c#
+```csharp
 //热更层调用
 Util.Test<MainClass>();  //输出MainClass
 Util.Test<HotfixClass>();  //输出ILTypeInstance
@@ -116,7 +116,7 @@ Util.Test<HotfixClass>();  //输出ILTypeInstance
 
 
 
-```c#
+```csharp
 /// <summary>
 /// 主工程工具类
 /// </summary>
@@ -130,7 +130,7 @@ public static class Util
 }
 ```
 
-```c#
+```csharp
 //热更层调用
 MainClass mc = new MainClass();
 HotfixClass hc = new HotfixClass();
@@ -151,7 +151,7 @@ Util.Test(hc.GetType());  //输出ILRuntime.Reflection.ILRuntimeType
 
 ILRuntimeType都对相关操作进行了对应的重写，以返回ILRuntimeFieldInfo、ILRuntimePropertyInfo、ILRuntimeMethodInfo
 
-```c#
+```csharp
 public class ILRuntimeType : Type
 {
     //...
