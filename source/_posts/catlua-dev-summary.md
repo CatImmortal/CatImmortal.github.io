@@ -439,13 +439,123 @@ LuaTable定义如下：
 
 
 
+### 元表与元方法
+
 元表，即**MetaTable**，在Lua中起到的作用相当于其他语言中运算符重载功能，通过设置与之对应的元方法，开发者可以自定义对Table的一些操作，比如赋值（Index）、取值(newindex)、调用(call)等
+
+虚拟机会在执行相关操作时检测元表中是否有对应元方法，若有则进行元方法的调用，而不再继续进行原本的处理了
+
+
+
+### 插入与扩容
+
+CatLua在插入一个正整数key时，会先判断是否在数组长度内，若是，则放入数组中
+
+否则继续检测是否只是刚好超出数组长度1位，若是，则放入数组触发扩容，扩容会导致将之前字典里存放的某些符合要求的正整数key的value值移动到数组部分
+
+若上面的检测都不通过，则直接放入数组部分
+
+详细源码如下：
+
+```csharp
+ if (TryConvertToArrIndex(key, out long index) && index >= 1)
+                {
+                    //key是整数或者是可以转换为整数索引的浮点数 
+
+                    if (index <= arr.Count)
+                    {
+                        //在数组长度内 放入数组
+                        arr[(int)index - 1] = value;
+
+                        if (index == arr.Count && value.Type == LuaDataType.Nil)
+                        {
+                            //value是个nil值 并且被放在数组的末尾 需要清理掉末尾的nil值
+                            RemoveArrTailNil();
+                        }
+                        return;
+                    }
+
+                    if (index == arr.Count + 1 && value.Type != LuaDataType.Nil)
+                    {
+                        //不在数组长度内 但只是刚刚超出1位 并且不是nil值
+
+                        //可能之前存在字典里 先删掉
+                        if (dict != null)
+                        {
+                            dict.Remove(key);
+                        }
+                        
+
+                        //放入数组 触发扩容
+                        arr.Add(value);
+
+                        //将字典里的符合条件的整数key的value移动到扩容后的数组
+                        MoveDictToArr();
+
+                        return;
+                    }
+
+                    
+                }
+
+                //不能放进数组里 只能试试字典了
+
+                if (value.Type != LuaDataType.Nil)
+                {
+                    //value不是nil值 放入字典里
+
+                    dict[key] = value;
+                }
+                else
+                {
+                    //value是个nil 删掉key
+                    dict.Remove(key);
+                }
+```
+
+```csharp
+/// <summary>
+        /// 数组部分扩容后，将字典部分的某些值移动到数组里
+        /// </summary>
+        private void MoveDictToArr()
+        {
+            if (dict == null)
+            {
+                return;
+            }
+
+            //将dict中从当前数组长度+1的连续整数key的value移动到数组部分
+            //比如数组长度为3 就将字典里key分别为4,5,6,7....的value移动到数组
+
+            int index = arr.Count + 1;
+            while (true)
+            {
+                LuaDataUnion key = Factory.NewInteger(index);
+                if (dict.TryGetValue(key, out LuaDataUnion data))
+                {
+                    arr.Add(data);
+                    dict.Remove(key);
+                    index++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+```
+
+
+
+原版Lua虚拟机则是根据正整数Key是否落在当前数组可容纳范围内决定是否放入数组，并在hash部分满后进行rehash来对数组和hash表进行空间调整，最终目标是数组部分利用率超过50%
+
+优化建议：**长度小的表在新增元素时会触发多次rehash，应当进行预填充避免**
 
 
 
 ## Closure（闭包）与Upvalue
 
-闭包指的是使用了其外层函数局部变量的内部函数，而Upvalue则是这个被引用的局部变量
+闭包一般指的是使用了其外层函数局部变量的内部函数，而Upvalue则是这个被引用的局部变量
 
 ```lua
 
@@ -539,7 +649,7 @@ end
         }
 ```
 
-C#闭包其固定参数为LuaState和参数个数，返回值则为该函数的返回值数量，如print函数无返回值则其C#闭包返回0
+C#闭包其固定参数为LuaState实例和参数数量，返回值则为该函数的返回值数量，如print函数无返回值则其C#闭包返回0
 
 
 
@@ -1056,4 +1166,109 @@ PostLuaFuncCall完整代码如下：
             globalStack.PushN(results, 0, resultNum);
         }
 ```
+
+
+
+# PCall
+
+Lua中的PCall相当于其他语言中的try catch的作用，能够在调用一个函数报错后中断调用流程并将异常信息返回
+
+因此可以直接在C#中使用try catch来实现PCall，并且有了栈帧的概念下，只要在调用前记录下当前栈帧，如果进入了catch块就不断弹出栈帧，直到回到了初始的调用栈帧，最后将异常信息压入栈顶即可
+
+```csharp
+public FuncCallState PCall(int argsNum,int resultsNum,int msg)
+        {
+            FuncCallFrame frame = curFrame;
+
+            try
+            {
+                CallFunc(argsNum, resultsNum);
+            }
+            catch (Exception e)
+            {
+                //不断弹出栈帧 直到到了初始的调用栈帧
+                while (curFrame != frame)
+                {
+                    PopFuncCallFrameAndSetTop();
+                }
+
+                //将异常信息作为pcall的返回值压入调用栈帧的栈顶
+                CallFrameReturnResultNum = 1;
+                Push(e.Message);
+                return FuncCallState.ErrRun;
+            }
+
+            return FuncCallState.Ok;
+        }
+```
+
+
+
+# GC算法
+
+因为C#是自带GC的语言，所以并未给CatLua实现一套GC算法
+
+不过在这里仍然简单阐述下原版Lua的GC算法
+
+
+
+## 双色标记
+
+Lua和C#一样，采用的是引用追踪式GC，每次GC时会从根对象出发（全局变量，栈，寄存器）遍历所有对象，被标记的就是可达对象，否则是不可达的，不可达对象被视为内存垃圾
+
+
+
+5.0前采用**双色标记**，每个对象非黑即白（扫描过的是黑色，未扫描过的是白色）
+
+
+
+双色标记GC算法过程：
+
+1. 初始化阶段：遍历root引用的对象，将其加入对象链表
+2. 标记阶段：从对象链表中取出未扫描元素，将其标记为黑色，并遍历该元素关联的所有对象，也标记为黑色
+3. 回收阶段：遍历所有对象，如果是白色就回收，如果是黑色不回收
+
+
+
+这种方法要求**一次性完成GC不能打断**，会造成较长时间的卡顿
+
+**为什么不能被打断？**
+
+因为在标记阶段后创建的新对象在本轮GC中将无法继续被标记，这样就会导致可能会用到的新对象被GC清理掉了从而导致出Bug
+
+
+
+## 三色标记
+
+Lua5.1开始采用三色标记法，实现了增量的回收，3种颜色分别是：
+
+**白色**：待访问状态，对象未被GC访问过，如果在结束GC扫描后仍然是白色，就说明其是内存垃圾
+
+**灰色**：待扫描状态，对象未被GC访问过，但已经准备进行访问
+
+**黑色**：已扫描状态，对象已被GC访问过
+
+
+
+三色标记GC算法过程：
+
+1. 初始化阶段，遍历root引用的对象，从白色改为灰色，放入灰色节点链表（灰色节点链表相当于记录了当前GC的进度）
+2. 标记阶段：不断从灰色链表取出元素，标记为黑色，然后遍历其关联的所有对象，标记为灰色，加入灰色链表，此阶段可打断
+3. 原子标记阶段：不可打断的阶段，用于处理第二灰色链表的标记
+4. 回收阶段：灰色链表为空后，遍历所有对象，如果为白色就回收
+
+
+
+虽然多数对象是从白到灰，但是像string这种不可能引用其他对象的数据类型是直接从白到黑的
+
+
+
+但即便是增量回收，在回收前依然有一个不可打断的**原子标记阶段**存在：
+
+首先，因为标记阶段可以被打断，这样在期间可能会有新对象创建，并且被一个黑色对象引用了，但这是不允许的，因为黑色已经标记过了，本轮GC不会再扫描它，这样其引用的的白色对象也不会被标记，到了回收阶段就会被误回收
+
+这是就需要两种不同的处理：
+
+1. **前向barrier**：将新创建的对象直接设置为灰色，适用于引用新对象的黑色对象不会频繁改变引用关系的数据类型，如lua的proto
+2. **后向barrier**：将引用新对象的黑色对象设置为灰色，放入第二灰色链表，在原子标记阶段一次性进行标记，适用于黑色对象可能频繁改变引用关系的数据类型，如table。而如果直接把从黑色变灰色的table对象放入灰色链表，因为table的key和value引用关系变化频繁，就可能在黑色和灰色间反复横跳，进行很多重复的扫描，所以需要将table放入第二灰色链表中，在原子标记阶段一次性处理完
 
