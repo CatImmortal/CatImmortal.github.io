@@ -1,7 +1,7 @@
 ---
 title: Unity资源框架设计中不同级别依赖管理的对比
 date: 2021-10-29 20:47:28
-tags: AssetBundle
+tags: 资源管理
 categories: 程序
 description: Bundle级别与Asset级别的依赖管理的对比
 top_img: https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/DependencyManageCompare/DependencyManageCompare_4.png
