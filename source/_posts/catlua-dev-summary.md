@@ -225,7 +225,7 @@ CatLua则是采用**表驱动**的写法，将Lua指令与其相关参数及其�
 Instruction定义如下：
 
 ```csharp
- /// <summary>
+ 	/// <summary>
     /// 指令
     /// </summary>
     public class Instructoin
@@ -674,7 +674,7 @@ end
         }
 ```
 
-C#闭包其固定参数为LuaState实例和参数数量，返回值则为该函数的返回值数量，如print函数无返回值则其C#闭包返回0
+C#闭包其固定参数为**LuaState对象和参数数量**，返回值则为该函数的**返回值数量**，如print函数无返回值则其C#闭包返回0
 
 
 
@@ -743,7 +743,20 @@ public class Upvalue
 - 开放状态意味着此时此Upvalue所代表的局部变量仍然存活在栈中，修改Upvalue也需要修改栈中的局部变量
 - 闭合状态意味着那个局部变量已经离开作用域了
 
-在Lua官方C版虚拟机的实现中，若Upvalue处于开放状态则使用指针来引用那个局部变量，这样可以做到Upvalue与栈中局部变量的一并修改，而一旦闭合了，就将局部变量复制一份进来并将指针置空，这样局部变量就成为了此Upvalue独占的存在
+在原版Lua的实现中，若Upvalue处于开放状态则使用指针v来引用那个局部变量，这样可以做到对Upvalue的修改会同时影响到栈中局部变量。而一旦闭合了，就将局部变量复制到value中并让v指向value，这样局部变量就成为了此Upvalue所独有
+
+```c
+typedef struct UpVal {
+	CommonHeader;
+	TValue *v; /* points to stack or to its own value */
+	union {
+		TValue value; /* the value (when closed) */
+		//省略...
+	} u;
+} UpVal;
+```
+
+
 
 由于C#通常情况下没有指针，所以只能记录开放状态下的局部变量的栈中索引，然后在被修改时一并对栈中数据进行修改
 
@@ -933,7 +946,7 @@ func1()
 栈帧的定义如下：
 
 ```csharp
-/// <summary>
+	/// <summary>
     /// 函数调用栈帧
     /// </summary>
     public class FuncCallFrame
@@ -1018,9 +1031,9 @@ func1()
 
 以Lua函数调用为例（C#函数调用流程则是Lua函数调用流程的简化版本），在CatLua中将整个调用流程分为了3个阶段：
 
-1. 调用Lua函数前
-2. 执行Lua函数调用
-3. Lua函数调用后
+1. **调用Lua函数前**
+2. **执行Lua函数调用**
+3. **Lua函数调用后**
 
 ```csharp
 PreLuaFuncCall(argsNum);
@@ -1296,4 +1309,434 @@ Lua5.1开始采用三色标记法，实现了增量的回收，3种颜色分别�
 
 1. **前向barrier**：将新创建的对象直接设置为灰色，适用于引用新对象的黑色对象不会频繁改变引用关系的数据类型，如lua的proto
 2. **后向barrier**：将引用新对象的黑色对象设置为灰色，放入第二灰色链表，在原子标记阶段一次性进行标记，适用于黑色对象可能频繁改变引用关系的数据类型，如table。而如果直接把从黑色变灰色的table对象放入灰色链表，因为table的key和value引用关系变化频繁，就可能在黑色和灰色间反复横跳，进行很多重复的扫描，所以需要将table放入第二灰色链表中，在原子标记阶段一次性处理完
+
+
+
+# 词法分析
+
+词法分析所做的即是不断地将源代码字符串中的**词法单元**(Token)给识别出来，形成一个Token流供语法分析进行提取
+
+
+
+Lua中的Token主要分为以下几类：
+
+1. **分隔符**
+2. **运算符**
+3. **字符串字面量**
+4. **数字字面量**
+5. **标识符**
+6. **关键字**
+
+
+
+CatLua中对词法分析的实现比较简单，通过对首字符的内容switch case加上正则表达式进行Token识别
+
+
+
+例如：当前字符指向一个"="，此字符可能构成了“=”，也可能构成了"=="，那么就判断剩余字符是否以"=="开头，若是，则返回token为"=="，否则返回"="
+
+
+
+具体代码如下：
+
+
+
+首先定义TokenType枚举
+
+```csharp
+ 	/// <summary>
+    /// Token类型
+    /// </summary>
+    public enum TokenType
+    {
+        Eof,  //end-of-file
+        Vararg,  //...
+
+        SepSemi,  //;
+        SepComma,  //,
+        SepDot,  //.
+        SepColon,  //:
+        SepLable,  //::
+        SepLparen,  //(
+        SepRparen,  //)
+        SepLbrack,  //[
+        SepRbrack,  //]
+        SepLcurly,  //{
+        SepRcurly,  //}
+
+
+        OpAsssign,  //=
+        OpMinus,  //-
+        OpWave,  //~
+        OpAdd,  //+
+        OpMul,  //*
+        OpDiv,  // /
+        OpIDiv,  // //
+        OpPow,  //^
+        OpMod,  //%
+        OpBAnd,  //&
+        OpBOr,  //|
+        OpShR,  //>>
+        OpShL,  //<<
+        OpConcat,  //..
+        OpLt,  //<
+        OpLe,  //<=
+        OpGt,  //>
+        OpGe,  //>=
+        OpEq,  //==
+        OpNe,  //~=
+        OpLen,  //#
+        OpAnd,  //and
+        OpOr,  //or
+        OpNot,  //not
+
+
+        KwBreak,  //break
+        KwDo,  //do
+        KwElse,  //else
+        KwElseif,  //elseif
+        KwEnd,  //end
+        KwFalse,  //false
+        KwFor,  //for
+        KwFunction,  //function
+        KwGoto,  //goto
+        KwIf,  //if
+        KwIn,  //in
+        KwLocal,  //local
+        KwNil,  //nil
+        KwRepeat,  //repeat
+        KwReturn,  //return
+        KwThen,  //then
+        KwTrue,  //true
+        KwUntil,  //until
+        KwWhile,  //while
+
+        Identifier,  //identifier
+        Number,  //number literal
+        String,   //string literal
+
+        OpUnm = OpMinus,
+        OpSub = OpMinus,
+        OpBNot = OpWave,
+        OpBXor = OpWave,
+    }
+```
+
+
+
+然后定义词法分析器Lexer
+
+```csharp
+	/// <summary>
+    /// 词法分析器
+    /// </summary>
+    public class Lexer
+    {
+        public Lexer(string chunk, string chunkName)
+        {
+            this.chunk = chunk;
+            this.chunkName = chunkName;
+            Line = 1;
+            curIndex = 0;
+        }
+
+       	//省略...
+
+        /// <summary>
+        /// 匹配十进制整数或浮点数的正则表达式
+        /// </summary>
+        private static Regex numberRegex = new Regex(@"^-?\d+$|^(-?\d+)(\.\d+)?", RegexOptions.Compiled);
+
+        /// <summary>
+        /// 匹配标识符和关键字的正则表达式
+        /// </summary>
+        private static Regex identifierRegex = new Regex(@"^[_\d\w]+", RegexOptions.Compiled);
+
+        /// <summary>
+        /// 匹配短字符串的正则表达式（不支持转义字符
+        /// </summary>
+        private static Regex shortStrRegex = new Regex("^\"[^\"]*\"", RegexOptions.Compiled);
+
+        /// <summary>
+        /// 源代码
+        /// </summary>
+        private string chunk;
+
+        /// <summary>
+        /// 源文件名
+        /// </summary>
+        private string chunkName;
+
+        /// <summary>
+        /// 当前索引
+        /// </summary>
+        private int curIndex;
+
+		//省略...
+
+
+        /// <summary>
+        /// 返回下一个token，对应行号和token类型，并将其跳过
+        /// </summary>
+        public void GetNextToken(out int line, out string token, out TokenType type)
+        {
+            //省略...
+            
+            //跳过空白字符，回车，换行与注释
+            SkipWhiteSpaces();
+
+            line = Line;
+
+            token = default;
+            type = default;
+
+            if (curIndex >= chunk.Length)
+            {
+                type = TokenType.Eof;
+                token = "Eof";
+                return;
+            }
+
+            char c = chunk[curIndex];
+
+            //分隔符,运算符和字符串
+            switch (c)
+            {
+                case ';':
+                    Next(1);
+                    type = TokenType.SepSemi;
+                    token = ";";
+                    return;
+
+                case ',':
+                    Next(1);
+                    type = TokenType.SepComma;
+                    token = ",";
+                    return;
+
+                case '(':
+                    Next(1);
+                    type = TokenType.SepLparen;
+                    token = "(";
+                    return;
+                    
+                case ')':
+                    Next(1);
+                    type = TokenType.SepRparen;
+                    token = ")";
+                    return;
+                    
+                case '=':
+                    if (Test("=="))
+                    {
+                        Next(2);
+                        type = TokenType.OpEq;
+                        token = "==";
+                    }
+                    else
+                    {
+                        Next(1);
+                        type = TokenType.OpAsssign;
+                        token = "=";
+                    }
+                    return;
+					//省略...
+            }
+
+            //数字字面量
+            if (c == '.' || char.IsDigit(c))
+            {
+                token = ScanNumber();
+                type = TokenType.Number;
+                return;
+            }
+
+            //标识符或关键字
+            if (c == '_' || char.IsLetter(c))
+            {
+                token = ScanIdentifier();
+                if (KeyWordTokenMap.TryGetValue(token,out type))
+                {
+                    //关键字
+                    return;
+                }
+
+                //标识符
+                type = TokenType.Identifier;
+                return;
+            }
+
+            Error("语法错误，当前字符为:" + c);
+        }
+
+        /// <summary>
+        /// 跳过n个字符
+        /// </summary>
+        private void Next(int n)
+        {
+            curIndex += n;
+        }
+
+        /// <summary>
+        /// 剩余的源代码是否以s开头
+        /// </summary>
+        private bool Test(string s)
+        {
+            return chunk.Substring(curIndex).StartsWith(s);
+        }
+
+       
+		//省略...
+    }
+```
+
+
+
+这样就完成了词法分析的过程
+
+
+
+# 语法分析
+
+语法分析的作用即是根据编程语言的文法规则，将token序列转换为抽象语法树（AST）
+
+如`a * ( b + c )`的AST如下：
+
+![](https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatLuaDevSummary/CatLuaDevSummary_11.png)
+
+Lua的文法规则采用了一种上下文无关文法EBNF（扩展的巴科斯范式）
+
+该文法定义了编程语言中每种合法语句/表达式由一些什么东西构成
+
+语句和表达式的区别主要在于：**语句可执行，表达式可求值**（因此函数即是表达式也是语句）
+
+同时Lua采用的是**递归下降**法进行语法分析，遇到关键字就检查是否匹配，遇到语句/表达式就调用相应的解析方法进行解析
+
+## 一个示例：解析do语句
+
+do语句在Lua中表现为：
+
+```lua
+do
+    --do something
+end
+```
+
+do语句的EBNF文法定义为：
+
+```
+dostat -> DO block END
+```
+
+该定义表达了Lua中的do语句由1个关键字do，1个代码块block，最后再来1个关键字End构成
+
+
+
+而在进行具体的do语句解析中，逻辑就是这样的：
+
+1. **提取并丢弃do关键字**
+2. **ParseBlock解析1个block对象**
+3. **提取并丢弃end关键字**
+4. **用block对象创建Dostat对象中并返回**
+
+
+
+解析do语句的代码如下：
+
+```csharp
+        /// <summary>
+        /// 解析do语句
+        /// </summary>>
+        private static DoStat ParseDoStat(Lexer lexer)
+        {
+            //跳过do
+            lexer.GetNextTokenOfType(TokenType.KwDo, out _, out _);
+
+            //解析block
+            Block block = ParseBlock(lexer);
+
+            //跳过end
+            lexer.GetNextTokenOfType(TokenType.KwEnd, out _, out _);
+
+            return new DoStat(block);
+        }
+```
+
+# 函数原型编译
+
+在得到了AST后，就需要根据这个AST生成函数原型
+
+编译过程和语法分析过程类似，也是采取一种**递归下降**的方法，根据遇到的语句/表达式调用不同的编译方法生成对应的指令
+
+```csharp
+		/// <summary>
+        /// 编译语句
+        /// </summary>
+        private static void CompileStat(GenFuncInfo fi, BaseStat stat)
+        {
+            //根据语句类型调用不同的编译方法
+
+            if (stat is FuncCallStat)
+            {
+                CompileFuncCallStat(fi, (FuncCallStat)stat);
+                return;
+            }
+
+            if (stat is BreakStat)
+            {
+                CompileBreakStat(fi, (BreakStat)stat);
+                return;
+            }
+
+            if (stat is DoStat)
+            {
+                CompileDoStat(fi, (DoStat)stat);
+                return;
+            }
+
+            //省略...
+
+            throw new Exception("不支持编译的语句：" + stat.GetType());
+        }
+```
+
+```csharp
+ 		/// <summary>
+        /// 编译表达式 
+        /// </summary>
+        private static void CompileExp(GenFuncInfo fi, BaseExp exp, int reg, int num)
+        {
+            if (exp is NilExp)
+            {
+                int b = reg + num - 1;
+                fi.EmitLoadNil(reg, b);
+                return;
+            }
+
+            if (exp is FalseExp)
+            {
+                fi.EmitLoadBool(reg, 0, 0);
+                return;
+            }
+
+            if (exp is TrueExp)
+            {
+                fi.EmitLoadBool(reg, 1, 0);
+                return;
+            }
+
+            //省略...
+
+            throw new Exception("不支持编译的表达式：" + exp.GetType());
+        }
+```
+
+当然这里只是简要的展示了一下编译流程，实际过程中是有非常多的细节要处理的，包括但不限于：
+
+1. **计算寄存器位置**
+2. **作用域层级管理**
+3. **处理变长参数**
+4. **处理变长返回值**
+5. **处理Upvalue**
+6. **处理跳转类指令的参数回填**
 
