@@ -25,7 +25,7 @@ Runtime部分代码结构如下：
 
 - Attributes：包含内置的特性标签，主要用于忽略字段和预生成转换代码
 - Lexer：包含用于读取Json词法单元的Json词法分析器
-- Parser：包含通用于将Json文本与对象进行互相转换的Json解析器
+- Parser：包含用于将Json文本与对象进行互相转换的Json解析器
 
 
 
