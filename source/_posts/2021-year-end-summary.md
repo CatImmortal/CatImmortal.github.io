@@ -1,8 +1,10 @@
 ---
 title: 2021年终总结
 date: 2021-12-31 23:19:40
-tags: 年终总结
-categories: 其他
+tags: 
+categories: 
+  - 其他
+  - 年终总结
 description: 关于2021年我都干了些啥
 ---
 

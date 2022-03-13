@@ -1,8 +1,10 @@
 ---
 title: 手游MMO项目的UI优化实践
 date: 2021-11-02 21:18:02
-tags: 性能优化
-categories: 程序
+tags: UGUI
+categories: 
+  - 程序
+  - 性能优化
 description: 关于UnityUI性能优化的项目实践
 top_img: https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/UIOptimizatioOfMMO/UIOptimizatioOfMMO_4.png
 cover: https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/UIOptimizatioOfMMO/UIOptimizatioOfMMO_4.png

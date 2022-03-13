@@ -1,8 +1,10 @@
 ---
 title: 面试记录
 date: 2021-11-12 23:19:27
-tags: 面经
-categories: 其他
+tags:
+categories: 
+  - 其他
+  - 面试记录
 description: 关于我的面试记录
 ---
 

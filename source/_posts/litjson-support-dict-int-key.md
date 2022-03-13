@@ -3,7 +3,9 @@ title: 修改LitJson以支持int类型的字典Key
 date: 2022-01-17 21:44:17
 tags:
   - Json
-categories: 程序
+categories: 
+  - 程序
+  - 踩坑记录
 description: 一次对LitJson源码修改的记录
 ---
 

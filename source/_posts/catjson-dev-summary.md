@@ -5,7 +5,9 @@ tags:
   - Json
   - 序列化
   - 编译原理
-categories: 程序
+categories: 
+  - 程序
+  - 开发总结
 description: 高性能Unity Json库
 top_img: https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatJsonDevSummary/CatJsonDevSummary_1.png
 cover: https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatJsonDevSummary/CatJsonDevSummary_1.png

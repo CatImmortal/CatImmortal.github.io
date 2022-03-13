@@ -3,8 +3,9 @@ title: C#委托与匿名方法内存分配总结
 date: 2021-11-13 23:50:38
 tags: 
   - C#
+categories: 
+  - 程序
   - 性能优化
-categories: 程序
 description: 关于在C#中使用委托与匿名方法的各种情况下内存分配的总结
 ---
 
