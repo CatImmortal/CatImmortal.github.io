@@ -4,6 +4,35 @@
   
     
     <entry>
+      <title>《垃圾回收的算法与实现》1.标记-清除法</title>
+      <link href="/2022/03/13/gc-algorithm-notes-1/"/>
+      <url>/2022/03/13/gc-algorithm-notes-1/</url>
+      
+        <content type="html"><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>垃圾回收（Garbage Collection，后文简称GC）是一种程序运行时的自动内存管理技术</p><p>其作用主要在于防止因手动管理内存导致的诸如<strong>内存泄露</strong>，<strong>悬垂指针</strong>等问题的发生，减少程序员在开发时的心智负担</p><p>GC的基础算法有3种：</p><ol><li>标记-清除法</li><li>引用计数法</li><li>复制法</li></ol><p>后世的诸多GC算法都是在这3种基础算法上衍生而来的</p><h1 id="基本概念说明"><a href="#基本概念说明" class="headerlink" title="基本概念说明"></a>基本概念说明</h1><h2 id="对象-头-域"><a href="#对象-头-域" class="headerlink" title="对象/头/域"></a>对象/头/域</h2><p>在GC的世界中，对象表示的是”数据的集合“，可理解为GC进行回收的基本单位，即GC管理的是一个个对象</p><p>对象由头(header)和域(field)组成</p><h3 id="头"><a href="#头" class="headerlink" title="头"></a>头</h3><p>对象中保存对象本身信息的部分称为头，包括：对象大小，对象种类，此外还会根据GC算法的不同保存不同的额外信息（比如标记-清除法会在对象头部设置1个flag记录此对象是否已标记）</p><h3 id="域"><a href="#域" class="headerlink" title="域"></a>域</h3><p>域可简单理解为对象中的字段，分为指针和非指针</p><p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/GCAlgorithmNotes1/GCAlgorithmNotes1_1.png"></p><h2 id="指针"><a href="#指针" class="headerlink" title="指针"></a>指针</h2><p>GC根据指针去搜寻到其他对象，对非指针不进行任何操作</p><p>需要注意2点：</p><ol><li>GC是否能判别指针和非指针</li><li>指针指向对象的哪个部分。如果指向对象首地址以外的部分，GC就会变得非常复杂，因此在大多数语言中指针都默认指向对象首地址</li></ol><p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/GCAlgorithmNotes1/GCAlgorithmNotes1_2.png"></p><h2 id="堆"><a href="#堆" class="headerlink" title="堆"></a>堆</h2><p>堆(heap)指的是用于动态存放对象的内存空间，GC管理的即是堆中的对象，当堆被对象占满时GC就会启动，从而分配可用空间，如果GC后空间还是不够，就需要扩大堆</p><p>活动对象/非活动对象</p><p>活动对象指的是那些被引用着的对象，反之已经没被引用的对象就是非活动对象，即“垃圾”</p><p>GC会保留活动对象，销毁非活动对象</p><h2 id="分块"><a href="#分块" class="headerlink" title="分块"></a>分块</h2><p>分块(chunk)指事先准备的堆内存空间</p><p>初始状态下，堆被一个大的分块占据，程序会把这个分块分割成合适的大小，作为活动对象使用</p><p>活动对象不久后会变成垃圾被回收，此时这部分被回收的内存空间再次成为分块，为下次被利用做准备</p><p>内存里的各个分块都重复着分块→活动对象→垃圾→分块→……这样的过程</p><h2 id="根"><a href="#根" class="headerlink" title="根"></a>根</h2><p>根(root)指的是指向对象的指针的起点部分</p><p>一般而言，静态变量，局部变量，寄存器都是根对象</p><h2 id="评价标准"><a href="#评价标准" class="headerlink" title="评价标准"></a>评价标准</h2><p>评价GC算法性能时，有以下4个标准</p><ol><li>吞吐量（堆内存大小/总GC耗时）</li><li>最大暂停时间（单次GC最大的耗时）</li><li>堆使用效率（对堆的额外占用与管理范围）</li><li>访问的局部性（缓存命中率）</li></ol><h1 id="标记-清除法"><a href="#标记-清除法" class="headerlink" title="标记-清除法"></a>标记-清除法</h1><h2 id="整体流程"><a href="#整体流程" class="headerlink" title="整体流程"></a>整体流程</h2><p>标记-清除法由标记阶段和清除阶段组成</p><p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/GCAlgorithmNotes1/GCAlgorithmNotes1_3.png"></p><p>标记阶段从根从发，将所有活动对象做上标记</p><p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/GCAlgorithmNotes1/GCAlgorithmNotes1_4.png"></p><p>清除阶段则会遍历堆，将没有标记到的那些非活动对象回收（放入空闲链表）</p><p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/GCAlgorithmNotes1/GCAlgorithmNotes1_5.png"></p><p>因为需要遍历整个堆，所以标记-清除法花费的时间与堆大小成正比</p><h3 id="分配"><a href="#分配" class="headerlink" title="分配"></a>分配</h3><p>在清除阶段已经将所有非活动对象回收进空闲链表了，那么分配就是搜索空闲链表寻找大小合适的分块</p><p>搜索策略有以下3种：</p><ol><li>First-fit（返回第一个大小等于目标大小的分块，若找到的分块大于目标大小，将其分割为目标大小和剩余大小）</li><li>Best-fit（返回大小等于目标大小的最小分块）</li><li>Worst-fit（找出空闲链表中最大的分块，将其分割为目标大小和剩余大小，目的是将分割后剩余的分块最大化，但是容易生成大量小分块）</li></ol><h3 id="合并"><a href="#合并" class="headerlink" title="合并"></a>合并</h3><p>在进行数次的分配与回收后，可能会产生大量小分块，如果它们是连续的，就能把所有小分块连在一起形成大分块，这就是合并，合并是在清除阶段进行的</p><h2 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h2><h3 id="简单"><a href="#简单" class="headerlink" title="简单"></a>简单</h3><p>标记-清除法的实现简单，只有标记和清除两个阶段，容易与其他GC算法相结合</p><h3 id="与保守式GC算法兼容"><a href="#与保守式GC算法兼容" class="headerlink" title="与保守式GC算法兼容"></a>与保守式GC算法兼容</h3><p>保守式GC算法对象是不能被移动的，因此与需要移动对象的复制法以及标记-压缩法不兼容，但标记-清除法不需要移动对象</p><h2 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h2><h3 id="碎片化"><a href="#碎片化" class="headerlink" title="碎片化"></a>碎片化</h3><p>在标记-清除法的使用过程中会产生大量被细化的分块，不久就会导致无数小分块散步在堆的各处，这就是碎片化</p><p>如果发生碎片化，那么即使堆中分块总大小够用，也会因为分块都太小导致内存分配失败</p><p>为了避免碎片化，可以采用<strong>内存压缩</strong>，或者<strong>BiBOP</strong>法</p><p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/GCAlgorithmNotes1/GCAlgorithmNotes1_6.png"></p><h3 id="分配速度"><a href="#分配速度" class="headerlink" title="分配速度"></a>分配速度</h3><p>因为分块不连续，所以每次分配都要遍历空闲链表，找到足够大的分块，最糟的情况就是每次分配都要遍历链表到最后一个节点</p><p>而在复制法和标记-压缩法中，分块是连续的内存空间，没必要遍历空闲链表，分配就能高速进行，而且能在堆范围内分配很大的对象</p><p>后面会提到的<strong>多个空闲链表</strong>和<strong>BiBOP</strong>法都是为了能在标记-清除法中高速分配而想出的办法</p><h3 id="与写时复制技术不兼容"><a href="#与写时复制技术不兼容" class="headerlink" title="与写时复制技术不兼容"></a>与写时复制技术不兼容</h3><p>写时复制技术(copy on write)简单来说就是在复制数据时不真正的进行复制，而是假装复制了，实际上是用的共享数据，到了需要写入数据时才复制一份数据作为自己的数据然后进行写入操作</p><p>标记-清除法下，即使没有重写对象，也会设置所有活动对象的标志位，这样就会频繁发生本不应该发生的赋值，压迫到内存空间</p><p>为了处理这个问题，需要采用<strong>位图标记</strong>法(bitmap marking)</p><h2 id="多个空闲链表"><a href="#多个空闲链表" class="headerlink" title="多个空闲链表"></a>多个空闲链表</h2><p>标记-清除法在只用一个空闲链表的情况下分配速度太慢，为了提高速度，需要根据分块大小创建多个空闲链表，比如创建只连接大分块的和只连接小分块的</p><p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/GCAlgorithmNotes1/GCAlgorithmNotes1_7.png"></p><p>这里有一个问题就是到底创建多少个空闲链表比较好？</p><p>通常会给分块大小设定一个上限，超出此上限的统一扔进一个空闲链表里处理（虽然这样会导致对于非常大的分块的搜索效率很低，但因为分配这种大小的情况很罕见，所以也是可以接受的，更重要的是怎么去更快的搜索需要频繁分配的小分块）</p><h2 id="BiBOP法"><a href="#BiBOP法" class="headerlink" title="BiBOP法"></a>BiBOP法</h2><p>BiBOP法(Big Bag Of Pages)用一句话概括就是“将大小相近的对象整理成固定大小的块进行管理的做法”</p><p>因为标记-清除法会产生碎片化，导致堆上杂乱散布着大小各异的对象，对此就可以使用此方法：把堆分割成固定大小的块，让每个块只能配置同样大小的分块</p><p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/GCAlgorithmNotes1/GCAlgorithmNotes1_8.png"></p><p>这样配置对象能提高内存的使用效率，因为每个块中只能配置同样大小的对象，所以不可能出现大小不均的分块</p><p>但是BiBOP法并不能完全消除碎片化，比如在全部用于2个字的块中，只有1到2个活动对象，就不算是有效利用了堆</p><h2 id="位图标记"><a href="#位图标记" class="headerlink" title="位图标记"></a>位图标记</h2><p>用于标记的位是被分配到各个对象头中的，也就是说是把对象和头一并处理的，这与写时复制技术不兼容</p><p>对此，可以只收集各个对象的标志位并表格化，不与对象一起管理，在标记时不在对象头中置位，而是在表格中的特定场所置位，这样的表格就是“位图表格，利用这个表格进行标记的行为就是”位图标记“</p><p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/GCAlgorithmNotes1/GCAlgorithmNotes1_9.png"></p><h3 id="优点-1"><a href="#优点-1" class="headerlink" title="优点"></a>优点</h3><p>与写时复制技术兼容</p><p>清除操作更高效（可以快速消去标志位）</p><h3 id="要注意的地方"><a href="#要注意的地方" class="headerlink" title="要注意的地方"></a>要注意的地方</h3><p>在进行位图标记时，必须注意对象地址和位图表格的对应，在堆有多个，对象地址不连续的时候，一般会为每个堆都准备一个位图表格</p><h2 id="延迟消除法"><a href="#延迟消除法" class="headerlink" title="延迟消除法"></a>延迟消除法</h2><p>在前面提到过，标记-清除法在清除操作所花费的时间和堆大小成正比，延迟清除法是在标记结束后，不立马进行清除，而是通过延迟防止主线程长时间暂停</p><p>那么什么时候进行清除呢？</p><p>在分配对象内存时会进行延迟清除，以找到一个适合的分块，如果此时找不到会进行一遍标记操作，然后再进行第二次延迟清除，这次如果再找不到适合的分块就意味着内存分配失败了</p><p>因为延迟清除法不是一下遍历整个堆，而只在分配时执行必要的遍历，所以可以压缩因清除操作导致的主线程暂停时间</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 程序 </category>
+          
+          <category> 学习笔记 </category>
+          
+          <category> 垃圾回收的算法与实现 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> GC </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>修改LitJson以支持int类型的字典Key</title>
       <link href="/2022/01/17/litjson-support-dict-int-key/"/>
       <url>/2022/01/17/litjson-support-dict-int-key/</url>
@@ -14,6 +43,8 @@
       <categories>
           
           <category> 程序 </category>
+          
+          <category> 踩坑记录 </category>
           
       </categories>
       
@@ -40,14 +71,10 @@
           
           <category> 其他 </category>
           
+          <category> 年终总结 </category>
+          
       </categories>
       
-      
-        <tags>
-            
-            <tag> 年终总结 </tag>
-            
-        </tags>
       
     </entry>
     
@@ -64,6 +91,8 @@
       <categories>
           
           <category> 程序 </category>
+          
+          <category> 开发总结 </category>
           
       </categories>
       
@@ -94,14 +123,14 @@
           
           <category> 程序 </category>
           
+          <category> 性能优化 </category>
+          
       </categories>
       
       
         <tags>
             
             <tag> C# </tag>
-            
-            <tag> 性能优化 </tag>
             
         </tags>
       
@@ -121,14 +150,10 @@
           
           <category> 其他 </category>
           
+          <category> 面试记录 </category>
+          
       </categories>
       
-      
-        <tags>
-            
-            <tag> 面经 </tag>
-            
-        </tags>
       
     </entry>
     
@@ -145,6 +170,8 @@
       <categories>
           
           <category> 程序 </category>
+          
+          <category> 开发总结 </category>
           
       </categories>
       
@@ -173,12 +200,14 @@
           
           <category> 程序 </category>
           
+          <category> 性能优化 </category>
+          
       </categories>
       
       
         <tags>
             
-            <tag> 性能优化 </tag>
+            <tag> UGUI </tag>
             
         </tags>
       
@@ -197,6 +226,8 @@
       <categories>
           
           <category> 程序 </category>
+          
+          <category> 踩坑记录 </category>
           
       </categories>
       
@@ -222,6 +253,8 @@
       <categories>
           
           <category> 程序 </category>
+          
+          <category> 踩坑记录 </category>
           
       </categories>
       
