@@ -4,6 +4,35 @@
   
     
     <entry>
+      <title>《垃圾回收的算法与实现》6.分代垃圾回收</title>
+      <link href="/2022/06/11/gc-algorithm-notes-6/"/>
+      <url>/2022/06/11/gc-algorithm-notes-6/</url>
+      
+        <content type="html"><![CDATA[<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><h2 id="对象的年龄"><a href="#对象的年龄" class="headerlink" title="对象的年龄"></a>对象的年龄</h2><p>通过经验总结，人们发现：大部分对象在生成后马上就变成了垃圾，很少有对象能活得很久</p><p>分代垃圾回收利用该经验，引入了“对象年龄”的概念，经过一次GC后活下来的对象年龄为1岁</p><h2 id="新生代对象和老年代对象"><a href="#新生代对象和老年代对象" class="headerlink" title="新生代对象和老年代对象"></a>新生代对象和老年代对象</h2><p>分代垃圾回收中将刚生成的对象称为新生代对象，到达一定年龄的对象则是老年代对象</p><p>前面提过，新生代对象绝大部分都会马上变成内存垃圾，如果只对这些新生代对象执行GC，那么相比对所有对象执行GC就会快很多</p><p>另一方面，也会将存活了一定次数的新生代对象提升为老年代对象</p><h1 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h1><h2 id="吞吐量得到改善"><a href="#吞吐量得到改善" class="headerlink" title="吞吐量得到改善"></a>吞吐量得到改善</h2><p>“新生代对象会很快变成垃圾”虽然只是经验之谈，不过还是适用于大多数情况的，以这个原则为前提，新生代GC只将刚生成的对象当成需要GC的对象，就能减少时间的消耗</p><h1 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h1><h2 id="在部分程序中会起到反作用"><a href="#在部分程序中会起到反作用" class="headerlink" title="在部分程序中会起到反作用"></a>在部分程序中会起到反作用</h2><p>“新生代对象会很快变成垃圾”并非适用于所有程序，对象会活的很久的程序也很多，对这样的程序执行分代垃圾回收会导致：</p><ol><li>新生代GC所花费的世界增多</li><li>老年代GC频繁运行</li></ol><h1 id="多代垃圾回收"><a href="#多代垃圾回收" class="headerlink" title="多代垃圾回收"></a>多代垃圾回收</h1><p>分代垃圾回收将对象分为新生代和老年代，通过尽量减少从新生代晋升到老年代的对象，来减少在老年代对象上消耗的垃圾回收的世间</p><p>在这个基础上，将对象划分为多代的方法就是多代垃圾回收</p><p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/GCAlgorithmNotes6/GCAlgorithmNotes6_1.png"></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 程序 </category>
+          
+          <category> 学习笔记 </category>
+          
+          <category> 垃圾回收的算法与实现 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> GC </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>《垃圾回收的算法与实现》5.保守式GC与精准式GC</title>
       <link href="/2022/06/05/gc-algorithm-notes-5/"/>
       <url>/2022/06/05/gc-algorithm-notes-5/</url>
