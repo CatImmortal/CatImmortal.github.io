@@ -79,11 +79,11 @@ katex:
 # --------------------------------------
 
 # Favicon（網站圖標）
-favicon: https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/head.jpg
+favicon: https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/head2.png
 
 # Avatar (頭像)
 avatar:
-  img: https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/head.jpg
+  img: https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/head2.png
   effect: false
 
 # Disable all banner image
