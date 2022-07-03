@@ -4,6 +4,35 @@
   
     
     <entry>
+      <title>《垃圾回收的算法与实现》7.增量式垃圾回收</title>
+      <link href="/2022/07/02/gc-algorithm-notes-7/"/>
+      <url>/2022/07/02/gc-algorithm-notes-7/</url>
+      
+        <content type="html"><![CDATA[<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>通常非引用计数类型的GC算法都是一次性遍历整个堆执行的，这会造成主线程的严重卡顿（Stop-The-World），这在像游戏这样注重帧率平滑性的程序中是难以接受</p><p>因此人们想出了一种不一次性执行完GC，而是将回收过程分为多次去执行的方法，即增量式回收（incremental GC），增量这个词有慢慢发生变化的意思</p><p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/GCAlgorithmNotes7/GCAlgorithmNotes7_1.png"></p><h1 id="三色标记算法"><a href="#三色标记算法" class="headerlink" title="三色标记算法"></a>三色标记算法</h1><p>顾名思义，这个算法将GC中的对象分为3种颜色：</p><ol><li><strong>白色：还未搜索过的对象</strong></li><li><strong>灰色：正在搜索的对象</strong></li><li><strong>黑色：搜索完毕的对象</strong></li></ol><p>以标记-清除法为例，GC一开始运行，所有从根能到达的对象都会被标记然后堆到栈中，GC只是发现了这样的对象，但还没有搜索完它们，所以这些对象就成了灰色对象</p><p>灰色对象会被依次从栈中取出，其子对象也会被涂成灰色，当其所有子对象都被涂成灰色时，对象就被涂成黑色</p><p>当GC结束时已经不存在灰色对象了，活动对象全部为黑色，垃圾则为白色</p><h1 id="标记-清除法的分割"><a href="#标记-清除法的分割" class="headerlink" title="标记-清除法的分割"></a>标记-清除法的分割</h1><p>如果将GC标记-清除法增量运行会怎么样？</p><p>增量式的GC标记-清除法可分为以下3个阶段：</p><ul><li><strong>根查找阶段</strong></li><li><strong>标记阶段</strong></li><li><strong>清除阶段</strong></li></ul><p>在根查找阶段，把直接从根引用的对象涂成灰色</p><p>在标记阶段查找灰色对象，将其子对象也涂成灰色，查找结束后将灰色对象涂成黑色</p><p>在清除阶段查找堆，将白色对象连接到空闲块，将黑色对象变回白色</p><p>其中在标记阶段和清除阶段会进行增量操作，在进行一定次数的操作后中断阶段</p><h1 id="标记遗漏"><a href="#标记遗漏" class="headerlink" title="标记遗漏"></a>标记遗漏</h1><p>标记阶段的暂停可能带来活动对象的标记遗漏</p><p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/GCAlgorithmNotes7/GCAlgorithmNotes7_2.png"></p><p>如上图，a是刚刚暂停标记阶段的状态，此时A是黑色，B是灰色，C是白色，等下次继续执行标记阶段时就应该对B进行搜索了</p><p>在暂停后，应用程序将A指向B的引用更新为指向C，然后删除B指向C的引用，就变成了c的状态</p><p>这时候如果重新开始标记阶段，B在经过搜索后变成了黑色，然后尽管此时C是活动对象，但仍然不会对其进行搜索，因为已经搜索过唯一指向C的A了</p><p>像这样单纯将GC标记-清除法进行增量，就会造成对活动对象的遗漏，继而在清除阶段错误回收活动对象</p><p>这种问题的原因在于从黑色对象指向白色对象的指针上，一旦产生这种指针，活动对象就不会被标记，为了防止这种情况，在改写指针时需要进行一些处理，这就是”<strong>写入屏障</strong>“</p><h1 id="写入屏障"><a href="#写入屏障" class="headerlink" title="写入屏障"></a>写入屏障</h1><p>写入屏障的逻辑很简单，只需要在新引用一个对象时进行判断，如果其没有被标记，那么就将其标记后堆到标记栈里，换句话说，如果新引用对象是白色对象，就把它涂成灰色</p><p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/GCAlgorithmNotes7/GCAlgorithmNotes7_3.png"></p><h1 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h1><p>增量式垃圾回收不是一口气运行GC，所以不会造成对主线程的瞬间卡顿，适合像游戏这样比起提高吞吐量，更重视缩短最大暂停时间的程序</p><h1 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h1><p>在一轮GC花费的总体时间会相比不增量运行的GC要更久</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 程序 </category>
+          
+          <category> 学习笔记 </category>
+          
+          <category> 垃圾回收的算法与实现 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> GC </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>《垃圾回收的算法与实现》6.分代垃圾回收</title>
       <link href="/2022/06/11/gc-algorithm-notes-6/"/>
       <url>/2022/06/11/gc-algorithm-notes-6/</url>
