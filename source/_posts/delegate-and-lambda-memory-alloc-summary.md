@@ -7,6 +7,8 @@ categories:
   - 程序
   - 性能优化
 description: 关于在C#中使用委托与匿名方法的各种情况下内存分配的总结
+top_img: https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CSharpLogo.jpeg
+cover: https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CSharpLogo.jpeg
 ---
 
 # 前言
