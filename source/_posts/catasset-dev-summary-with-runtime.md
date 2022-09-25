@@ -398,33 +398,33 @@ CatAsset的`LoadAsse<T>`接口统一了3种类别的资源加载，使用者在�
 ### 非编辑器资源模式
 
 ```csharp
-/// <summary>
-/// 获取资源类别
-/// </summary>
-public static AssetCategory GetAssetCategory(string assetName)
-{
-    if (!assetName.StartsWith("Assets/"))
-    {
-        //资源名不以Assets/开头 是外置原生资源
-        return AssetCategory.ExternalRawAsset;
-    }
+		/// <summary>
+        /// 获取资源类别
+        /// </summary>
+        public static AssetCategory GetAssetCategory(string assetName)
+        {
+            if (!assetName.StartsWith("Assets/") && !assetName.StartsWith("Packages/"))
+            {
+                //资源名不以Assets/ 和 Packages/开头 是外置原生资源
+                return AssetCategory.ExternalRawAsset;
+            }
 
-    AssetRuntimeInfo assetRuntimeInfo = CatAssetDatabase.GetAssetRuntimeInfo(assetName);
-    if (assetRuntimeInfo == null)
-    {
-        Debug.LogError($"GetAssetCategory调用失败，资源{assetName}的AssetRuntimeInfo为空");
-        return default;
-    }
+            AssetRuntimeInfo assetRuntimeInfo = CatAssetDatabase.GetAssetRuntimeInfo(assetName);
+            if (assetRuntimeInfo == null)
+            {
+                Debug.LogError($"GetAssetCategory调用失败，资源{assetName}的AssetRuntimeInfo为空");
+                return default;
+            }
 
-    if (assetRuntimeInfo.BundleManifest.IsRaw)
-    {
-        //内置原生资源
-        return AssetCategory.InternalRawAsset;
-    }
+            if (assetRuntimeInfo.BundleManifest.IsRaw)
+            {
+                //内置原生资源
+                return AssetCategory.InternalRawAsset;
+            }
 
-    //内置资源包资源
-    return AssetCategory.InternalBundleAsset;
-}
+            //内置资源包资源
+            return AssetCategory.InternalBundleAsset;
+        }
 ```
 
 

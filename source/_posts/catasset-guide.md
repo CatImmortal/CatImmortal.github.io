@@ -231,7 +231,7 @@ CatAssetManager.ImportInternalAsset(string manifestPath,Action<bool> callback,st
 CatAssetManager.LoadAsset<T>(string assetName, object userdata, LoadAssetCallback<T> callback,TaskPriority priority = TaskPriority.Middle)
 ```
 
-**assetName**为资源的加载路径，若资源类别为1和2，则是一个Assets/开头的路径，若为3，则是1个相对于读写区的路径
+**assetName**为资源的加载路径，若资源类别为1和2，则是一个**Assets/**开头的路径，若为3，则是1个相对于读写区的路径
 
 **userdata**为调用者的自定义数据，会通过加载回调传递回去
 
