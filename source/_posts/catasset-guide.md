@@ -5,12 +5,6 @@ tags: 资源管理
 categories: 程序
 ---
 
-# 框架版本
-
-此教程文档基于[CatAsset](https://github.com/CatImmortal/CatAsset)在Github上main主干的最新版本编写
-
-
-
 # 资源构建
 
 ## 指定资源目录
@@ -56,7 +50,7 @@ CatAsset默认提供了4种**构建规则**：
 
 ### 如何扩展构建规则？
 
-只需要通过自定义类实现`IBundleBuildRule`接口，并将其放置于**CatAsset/Editor/Rule**文件夹下即可
+只需要通过自定义类实现`IBundleBuildRule`接口即可
 
 
 
@@ -108,8 +102,6 @@ CatAsset默认提供了4种**构建规则**：
 
 **长度**即为此资源的文件长度
 
-点击**选中**按钮可在Unity内选中此资源
-
 
 
 ### 循环依赖检测
@@ -120,7 +112,7 @@ CatAsset默认提供了4种**构建规则**：
 
 ### 冗余分析
 
-在勾选**冗余分析**的情况下，点击**刷新**，CatAsset会自动将冗余资源按照其关联划分为多个冗余资源包
+CatAsset会自动将冗余资源按照其关联划分为多个冗余资源包
 
 
 
@@ -129,6 +121,19 @@ CatAsset默认提供了4种**构建规则**：
 在预览完成后，切换分页到**构建配置**，可进行相关设置
 
 ![](https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatAssetGuide/CatAssetGuide_08.png)
+
+
+
+### 构建设置
+
+![](https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatAssetGuide/CatAssetGuide_16.png)
+
+构建设置分为4种：
+
+1. WriteLinkXML：会通过SBP在资源包构建完成后自动生成link.xml文件到输出目录
+2. ForceRebuild：强制全量构建
+3. AppendMD5：在资源包名上附加MD5值
+4. ChunkBasedCompression：使用LZ4进行压缩
 
 
 
@@ -160,11 +165,15 @@ CatAsset默认提供了4种**构建规则**：
 
 
 
+或者通过项目中自定义的Manager来进行CatAssetManager.Update的调用
+
+
+
 ## 运行模式
 
 CatAsset提供了2种运行模式
 
-- PackageOnly（仅使用安装包内的资源，单机模式）
+- PackageOnly（单机模式，仅使用安装包内的资源）
 - Updatable（可更新模式）
 
 *后续将以单机模式为例*
@@ -185,7 +194,7 @@ CatAssetManager.CheckPackageManifest(Action<bool> callback)
 
 ## 编辑器资源模式
 
-若勾选**编辑器资源模式**，即可在不进行资源包构建与资源清单检查的前提下快速运行游戏
+若勾选**编辑器资源模式**，即可在不进行资源包构建的前提下快速运行游戏，此时CheckPackageManifest会直接返回true
 
 
 
@@ -228,26 +237,68 @@ CatAssetManager.ImportInternalAsset(string manifestPath,Action<bool> callback,st
 3类资源（非场景）统一通过以下接口进行加载：
 
 ```csharp
-CatAssetManager.LoadAsset<T>(string assetName, object userdata, LoadAssetCallback<T> callback,TaskPriority priority = TaskPriority.Middle)
+AssetHandler<T> handler = CatAssetManager.LoadAssetAsync<T>(string assetName, CancellationToken token = default,TaskPriority priority = TaskPriority.Low)
 ```
 
 **assetName**为资源的加载路径，若资源类别为1和2，则是一个**Assets/**开头的路径，若为3，则是1个相对于读写区的路径
 
-**userdata**为调用者的自定义数据，会通过加载回调传递回去
+**token**用于进行加载的取消操作
 
-**LoadAssetCallback**为资源加载回调，其定义为
+**priority**表示此加载任务的优先级
+
+
+
+### 资源句柄
+
+调用加载资源的接口后会返回一个表示资源句柄的`AssetHandler<T>`对象，其封装了对被加载的资源的相关操作，如注册此资源加载结束回调，`await handler`以等待加载结束，资源是否加载成功以及最重要的获取被加载的资源、卸载句柄等
+
+
+
+可通过注册`handler.OnLoaded`回调或直接`await handler`等待加载完成，然后通过`handler.Success`判断是否加载成功，`handler.Asset`获取到加载到的资源，或是通过`handler.Unload()`卸载句柄
 
 ```csharp
- public delegate void LoadAssetCallback<in T>(bool success, T asset,LoadAssetResult result, object userdata);
+CatAssetManager.LoadAssetAsync<TextAsset>("Assets/BundleRes/RawText/rawText1.txt").OnLoaded +=
+    handler =>
+    {
+        if (handler.IsSuccess)
+        {
+            Debug.Log($"加载原生资源 文本文件:{handler.Asset.text}");
+        }
+
+        handler.Unload();
+    };
 ```
 
-**success**表示此资源是否加载成功
+```csharp
+AssetHandler<TextAsset> handler = await CatAssetManager.LoadAssetAsync<TextAsset>("Assets/BundleRes/RawText/rawText1.txt");
+if (handler.IsSuccess)
+{
+	Debug.Log($"加载原生资源 文本文件:{handler.Asset.text}");
+}
+handler.Unload();
+```
 
-**asset**为加载到的资源，其类型为调用加载接口时传入的泛型类型
 
-**LoadAssetResult**为加载结果，其封装了原始资源实例与`GetAsset`接口
 
-**userdata**为调用加载接口时传入的userdata
+### 句柄中对资源对象的处理
+
+`AssetHandler<T>`封装了资源加载结果，包括**原始资源实例**，**资源类别**和用于获取资源的`AssetObj`,`Asset`及`AssetAs<T>`
+
+`AssetObj`表示原始资源实例
+
+`Asset`表示`AssetObj`通过`AssetAs<T>`转换后的结果
+
+`AssetAs<T>`会根据传入的`T`类型以及**资源类别**来判断应该返回什么
+
+其判断规则如下：
+
+1. 当`T`为`object`类型时会直接返回原始资源实例
+2. 当资源类别为原生资源时，如果`T`为`byte[]`类型，会直接返回原始资源实例，否则调用转换器将原始资源实例转换为对应类型的资源并返回
+3. 当资源类别为资源包资源时，如果`T`为`UnityEngine.Objec`t及其派生类型，会直接返回原始资源实例，否则会报错
+
+
+
+*通常来说直接使用`handler.Asset`即可*
 
 
 
@@ -299,43 +350,19 @@ CatAssetManager.RegisterCustomRawAssetConverter(Type type, CustomRawAssetConvert
 
 
 
-### 加载结果
-
-`LoadAssetResult`封装了加载结果，包括**原始资源实例**，**资源类别**和用于获取资源实例的`GetAsset`及`GetAsset<T>`，通常用于在加载了被转换过的原生资源后，获取原始资源实例以进行卸载操作
-
-`GetAsset<T>`会根据传入的`T`类型以及**资源类别**来判断应该返回什么
-
-其判断规则如下：
-
-1. 当`T`为`object`类型时会直接返回原始资源实例
-2. 当资源类别为原生资源时，如果`T`为`byte[]`类型，会直接返回原始资源实例，否则调用转换器将原始资源实例转换为对应类型的资源并返回
-3. 当资源类别为资源包资源时，如果`T`为`UnityEngine.Objec`t及其派生类型，会直接返回原始资源实例，否则会报错
-
-（`GetAsset`等价于`GetAsset<object>`）
-
-
-
 ### 批量资源加载
 
 CatAsset支持对一组资源进行批量加载的操作，其接口为：
 
 ```csharp
-CatAssetManager.BatchLoadAsset(List<string> assetNames, object userdata, BatchLoadAssetCallback callback, TaskPriority priority = TaskPriority.Middle)
+BatchAssetHandler handler = CatAssetManager.BatchLoadAssetAsync(List<string> assetNames,CancellationToken token = default, TaskPriority priority = TaskPriority.Low)
 ```
 
 
 
 *支持对3种类别资源的混合批量加载*
 
-
-
-### 取消加载
-
-调用加载接口后会返回一个int值，其表示加载任务的**GUID**，可以通过此**GUID**取消加载任务，取消加载的接口为：
-
-```csharp
-CatAssetManager.CancelTask(int guid)
-```
+*注意：由于在编辑器资源模式下，对原生资源的加载必须显式指定加载类型为byte[]，否则会被判断为内置资源包资源，而批量加载接口无法显式指定加载类型，所以无法在编辑器资源模式下对原生资源进行批量加载操作*
 
 
 
@@ -344,12 +371,29 @@ CatAssetManager.CancelTask(int guid)
 CatAsset采用**基于引用计数的资源卸载**方式，因此在加载资源后需要有与其成对调用的卸载调用才能正确将资源卸载掉，卸载接口为：
 
 ```csharp
-CatAssetManager.UnloadAsset(object asset)
+CatAssetManager.UnloadAsset(AssetHandler handler)
+```
+
+或
+
+```csharp
+assethandler.Unload()
 ```
 
 
 
-*asset需要为加载的原始资源实例，否则无法正确卸载*
+*可通过`BatchAssetHandler.Unload`来进行对批量加载到的资源的统一卸载*
+
+
+
+## 卸载句柄
+
+通过`handler.Unload()`会进行对句柄的卸载，其中会根据句柄当前状态进行处理：
+
+1. 若当前句柄无效，则不做处理
+2. 若当前资源加载中，则取消加载
+3. 若当前资源加载成功，则进行对资源的卸载
+4. 若当前资源加载失败，则仅释放句柄
 
 
 
@@ -358,17 +402,16 @@ CatAssetManager.UnloadAsset(object asset)
 对于场景的加载与卸载使用与非场景资源不同的接口，分别为：
 
 ```csharp
-CatAssetManager.LoadScene(string sceneName, object userdata, LoadSceneCallback callback,
-            TaskPriority priority = TaskPriority.Middle)
+SceneHandler handler = CatAssetManager.LoadSceneAsync(string sceneName,CancellationToken token = default, TaskPriority priority = TaskPriority.Low)
 ```
 
 ```csharp
-CatAssetManager.UnloadScene(Scene scene)
+CatAssetManager.UnloadScene(SceneHandler scene)
 ```
 
-
-
-*同样的，对于场景的加载也可以通过GUID进行取消*
+```
+sceneHandler.Unload()
+```
 
 
 
@@ -376,81 +419,24 @@ CatAssetManager.UnloadScene(Scene scene)
 
 考虑到手动调用卸载可能产生的不便性与易错漏性，可通过资源绑定接口将资源的生命周期与游戏物体/场景的生命周期进行绑定以实现自动卸载
 
-绑定后会在游戏物体销毁时/场景卸载时自动对被绑定的资源调用卸载接口
+绑定后会在游戏物体销毁时/场景卸载时自动对被绑定的资源句柄调用卸载接口
 
 资源生命周期绑定接口为：
 
 ```csharp
-CatAssetManager.BindToGameObject(GameObject target,object asset)
-CatAssetManager.BindToScene(Scene scene,object asset)
+CatAssetManager.BindToGameObject(GameObject target, IBindableHandler handler)
+CatAssetManager.BindToScene(Scene scene, IBindableHandler handler)
 ```
 
+或
 
+```
+scene.BindTo(handler)
+gameobject.BindTo(handler)
 
-## 运行时信息窗口
-
-为了方便进行资源加载/卸载相关的调试，CatAsset提供了用于展示资源运行时信息的窗口，点击上方工具栏**CatAsset/打开运行时信息窗口**即可打开
-
-![](https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatAssetGuide/CatAssetGuide_11.png)
-
-
-
-### 资源信息
-
-资源信息窗口提供了已加载的资源的相关信息
-
-![](https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatAssetGuide/CatAssetGuide_12.png)
-
-
-
-#### 文件长度
-
-其中资源包信息条目的文件长度表示资源包文件的实际长度，资源信息条目的长度表示此资源的原始文件长度
-
-
-
-#### 只显示主动加载的资源
-
-主动加载：在业务层通过加载接口进行资源加载的行为
-
-依赖加载：框架层自身通过依赖加载进行资源加载的行为
-
-
-
-若勾选**只显示主动加载的资源**，则会将通过自动依赖加载出的资源的相关信息隐藏，使得开发者能够更专注于那些被主动加载的资源信息
-
-
-
-#### 引用计数
-
-引用计数由主动加载的计数和依赖加载的计数2部分组成
-
-引用计数的增减规则：
-
-1. 每一次对资源的主动加载或主动卸载会+1或-1此资源的引用计数
-2. 当资源的引用计数从0增加到1或从1减少为0时，会+1或-1直接依赖资源的引用计数（**也就是说1个资源最多只会对它的所有直接依赖资源贡献1个引用计数**）
-
-
-
-#### 引用与依赖
-
-引用资源的定义：若资源A依赖资源B，则称A是B的引用资源
-
-引用资源包的定义：若资源包A中有资源X依赖资源包B中的资源Y，则称A是B的引用资源包
-
-
-
-*引用计数 - 引用资源的数量 = 此资源被主动加载的次数*
-
-
-
-### 任务信息
-
-在资源包满足卸载条件时，不会立即进行卸载，而是开启一个卸载任务，进行倒计时卸载
-
-此时可以在**任务信息**分页中查看相关的任务
-
-![](https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatAssetGuide/CatAssetGuide_13.png)
+handler.BindTo(scene)
+handler.BindTo(gameObject)
+```
 
 
 
@@ -482,7 +468,11 @@ CatAssetManager.CheckVersion(OnVersionChecked onVersionChecked)
 
 在资源版本检查完毕后，CatAsset会创建出需要进行更新的资源组所对应的更新器
 
-此时可以通过遍历资源组信息列表，获取其对应的更新器来判断其是否有需要更新的资源
+此时可以通过`CheckVersion`传递给回调的`VersionCheckResult`的`GroupUpdaters`字段获取到所有需要更新资源的更新器
+
+
+
+或者通过遍历资源组信息列表，获取其对应的更新器来判断其是否有需要更新的资源
 
 ```csharp
 		//遍历所有资源组的更新器
@@ -507,13 +497,13 @@ CatAssetManager.CheckVersion(OnVersionChecked onVersionChecked)
 使用更新资源组接口即可开始调用指定资源组的更新器，开始更新资源：
 
 ```csharp
-CatAssetManager.UpdateGroup(string group, OnBundleUpdated callback)
+CatAssetManager.UpdateGroup(string group, BundleUpdatedCallback callback)
 ```
 
-`OnBundleUpdated`为资源包更新回调，其定义如下：
+`BundleUpdatedCallback`为资源包更新回调，其定义如下：
 
 ```csharp
- public delegate void OnBundleUpdated(BundleUpdateResult result);
+public delegate void BundleUpdatedCallback(BundleUpdateResult result);
 ```
 
 `BundleUpdateResult`表示资源包更新结果：
@@ -522,22 +512,22 @@ CatAssetManager.UpdateGroup(string group, OnBundleUpdated callback)
 	/// <summary>
     /// 资源包更新结果
     /// </summary>
-    public struct BundleUpdateResult
+    public readonly struct BundleUpdateResult
     {
         /// <summary>
         /// 是否更新成功
         /// </summary>
-        public bool Success;
-        
+        public readonly bool Success;
+
         /// <summary>
-        /// 资源包相对路径
+        /// 资源包更新器信息
         /// </summary>
-        public string BundleRelativePath;
+        public readonly UpdateInfo UpdateInfo;
         
         /// <summary>
         /// 此资源包的资源组更新器
         /// </summary>
-        public GroupUpdater Updater;
+        public readonly GroupUpdater Updater;
 
         //省略...
     }
@@ -551,18 +541,108 @@ CatAssetManager.UpdateGroup(string group, OnBundleUpdated callback)
 
 ## 暂停/恢复更新
 
-可通过暂停更新接口暂停/恢复指定资源组更新器的资源更新行为：
+可通过相关接口暂停/恢复指定资源组更新器的资源更新行为：
 
 ```csharp
-CatAssetManager.PauseGroupUpdater(string group, bool isPause)
+CatAssetManager.PauseGroupUpdater(string group)
+CatAssetManager.ResumeGroupUpdater(string group)
 ```
 
 
 
-## 运行时信息窗口
+# 调试分析器
 
-可在**运行时信息窗口**的**资源组信息**分页和**更新器信息**分页中查看与资源更新有关的信息
+为了方便进行资源框架相关的调试，CatAsset提供了用于展示运行时信息的调试分析器窗口，点击上方工具栏**CatAsset/打开调试分析器窗口**即可打开
+
+
+
+调试分析器可用于进行**真机调试**，只需要在构建安装包时勾选**developmentBuild**和**Autoconnect Profiler**即可
+
+
+
+## 通用说明
+
+通过点击**采样**按钮，即可获取当前帧的分析器信息
+
+通过滑动Slider或直接输入帧号，可切换到不同帧对应的分析器信息
+
+
+
+## 资源包信息
+
+资源包信息窗口提供了**尚在内存中的资源包**的相关信息
+
+![](https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatAssetGuide/CatAssetGuide_12.png)
+
+
+
+### 文件长度
+
+其中资源包信息条目的文件长度表示资源包文件的实际长度，资源信息条目的长度表示此资源的原始文件长度
+
+
+
+### 只显示主动加载的资源
+
+主动加载：在业务层通过加载接口进行资源加载的行为
+
+依赖加载：框架层自身通过依赖加载进行资源加载的行为
+
+
+
+若勾选**只显示主动加载的资源**，则会将通过自动依赖加载出的资源的相关信息隐藏，使得开发者能够更专注于那些被主动加载的资源信息
+
+
+
+### 引用计数
+
+引用计数由主动加载的计数和依赖加载的计数2部分组成
+
+引用计数的增减规则：
+
+1. 每一次对资源的主动加载或主动卸载会+1或-1此资源的引用计数
+2. 当资源的引用计数从0增加到1或从1减少为0时，会+1或-1直接依赖资源的引用计数（**也就是说1个资源最多只会对它的所有直接依赖资源贡献1个引用计数**）
+
+
+
+### 上游与下游
+
+在依赖链中，若A依赖B，B依赖C，则称
+
+C是B的上游节点，B是A的上游节点
+
+A是B的下游节点，B是C的下游节点
+
+通过点击**查看依赖关系图**按钮，即可查看与当前资源包/资源有直接/间接上下游关系的依赖关系图
+
+*引用计数 - 下游节点的数量 = 此资源被主动加载的次数*
+
+
+
+## 资源信息
+
+资源信息窗口提供了**尚在内存中的资源**的相关信息，各列含义大致与资源包信息窗口的一致
+
+
+
+## 任务信息
+
+在CatAsset中，如加载、卸载、更新等异步操作都是由内置的任务系统实现的，可通过任务信息窗口查看当前进行中的任务
+
+![](https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatAssetGuide/CatAssetGuide_13.png)
+
+
+
+## 资源组信息
+
+此窗口显示与资源组相关的信息
 
 ![](https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatAssetGuide/CatAssetGuide_14.png)
+
+
+
+## 更新器信息
+
+此窗口显示资源更新相关的信息
 
 ![](https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatAssetGuide/CatAssetGuide_15.png)
