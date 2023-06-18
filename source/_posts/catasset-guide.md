@@ -39,12 +39,13 @@ CatAsset基于**资源目录**与**构建规则**以进行批量资源构建，�
 
 
 
-CatAsset默认提供了4种**构建规则**：
+CatAsset默认提供了5种**构建规则**：
 
 1. `NAssetToNBundle`（将指定目录下所有资源分别构建为一个资源包）
 2. `NAssetToNRawBundle`（将指定目录下所有资源分别构建为一个原生资源包）
 3. `NAssetToOneBundle`（将指定目录下所有资源构建为一个资源包）
-4. `NAssetToOneBundleWithTopDirectory`（将指定目录下所有一级子目录各自使用`NAssetToOneBundle`规则进行构建）
+4. `SecondDirectoryBasedNAssetToOneBundle`（将指定目录下所有二级子目录各自使用`NAssetToOneBundle`规则进行构建）
+5. `TopDirectoryBasedNAssetToOneBundle`（将指定目录下所有一级子目录各自使用`NAssetToOneBundle`规则进行构建）
 
 
 
@@ -60,6 +61,12 @@ CatAsset默认提供了4种**构建规则**：
 
 
 
+### Filter
+
+此处等价于在搜索栏输入的filter，如**t:prefab**表示此资源目录只会构建预制体资源
+
+
+
 ## 正则筛选
 
 在正则一栏中输入正则表达式，即可仅将**资源路径（以Assets/开头）匹配此表达式**的资源纳入构建范围内
@@ -72,23 +79,33 @@ CatAsset默认提供了4种**构建规则**：
 
 
 
+### 压缩设置
+
+此处用于设置此资源目录所构建的AssetBundle的压缩格式
+
+
+
+### 加密设置
+
+此处用于设置此资源目录所构建的AssetBundle的加密方式
+
+*注意：WebGL平台下不会对资源进行加密，所以此设置无效*
+
+
+
 ## 预览资源包
 
 切换分页到**资源包预览**，点击**刷新**即可预览到构建后的资源包的内容
 
 ![](https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatAssetGuide/CatAssetGuide_05.png)
 
-
-
-**bundleres/prefabb.bundle**部分即是此资源包在构建后的，相对于只读区/读写区的路径
-
-![](https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatAssetGuide/CatAssetGuide_06.png)
+**BundleRes/Chapter1.bundle**部分即是此资源包在构建后的，相对于只读区/读写区的路径
 
 
 
 **资源数**表示此资源包内的资源数量
 
-**总长度**表示此资源包内的资源文件长度总和（因此并不表示此资源包在构建后的文件长度，因为在进行预览时并未实际构建出此资源包）
+**预估长度**表示此资源包内的资源文件长度总和（因此并不表示此资源包在构建后的文件长度，因为在进行预览时并未实际构建出此资源包）
 
 
 
@@ -98,15 +115,17 @@ CatAsset默认提供了4种**构建规则**：
 
 ![](https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatAssetGuide/CatAssetGuide_07.png)
 
-**Assets/BundleRes/PrefabB/B1.prefab**为此资源的加载路径
+**Assets/BundleRes/Chapter1/B1.prefab**为此资源的加载路径
 
-**长度**即为此资源的文件长度
+
 
 
 
 ### 循环依赖检测
 
 点击**检测资源循环依赖**与**检测资源包循环依赖**即可在编辑器下检查相关循环依赖问题
+
+**准确预估贴图大小**选项若勾选即会按照贴图资源受压缩特使影响的实际大小进行预估长度，但在贴图资源数量多时会拖慢刷新速度
 
 
 
@@ -128,30 +147,39 @@ CatAsset会自动将冗余资源按照其关联划分为多个冗余资源包
 
 ![](https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatAssetGuide/CatAssetGuide_16.png)
 
-构建设置分为4种：
+构建设置分为3种：
 
-1. WriteLinkXML：会通过SBP在资源包构建完成后自动生成link.xml文件到输出目录
-2. ForceRebuild：强制全量构建
-3. AppendMD5：在资源包名上附加MD5值
-4. ChunkBasedCompression：使用LZ4进行压缩
+1. *WriteLinkXML*：会通过SBP在资源包构建完成后自动生成link.xml文件到输出目录
+2. *ForceRebuild*：强制全量构建
+3. *AppendMD5*：在资源包名上附加MD5值
+
+
+
+### 资源包全局压缩设置与资源包全局加密设置
+
+这两处设置分别用于决定全局的压缩与加密设置，此外每个资源目录还可决定自身独立的压缩与加密设置
+
+*注意：原生资源的压缩设置无效*
 
 
 
 ### 最终输出目录
 
-资源包在构建完成后的最终输出目录为：**资源包构建输出根目录/资源包构建平台/游戏版本号_资源清单版本号/**，如**AssetBundles/StandaloneWindows/0.1_1**
+资源包在构建完成后的最终输出目录为：**资源包构建输出根目录/资源包构建平台/资源清单版本号/**，如**Library/AssetBundlesOutput/StandaloneWindows/1**
 
-![](https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatAssetGuide/CatAssetGuide_09.png)
-
-*资源清单CatAssetManifest.json也会被写入到此目录下*
+*资源清单CatAssetManifest.json和CatAssetManifest.data也会被写入到此目录下*
 
 
 
-### 仅构建原生资源包
+### 构建补丁资源包
 
-当勾选**仅构建原生资源包**时，CatAsset会跳过AssetBundle构建流程，直接将被指定构建的原生资源最新版本与前一个版本的AssetBundle资源合并输出
+当勾选**构建补丁资源包**时，CatAsset会自行检查发生了变化的资源及其相关资源，然后将这些资源进行单独构建以此提升构建资源包的速度，新的补丁资源包会以原资源包名附加_patch后缀的形式存在，一个正式资源包只会有一个对应的补丁资源包
 
-*此选项适合仅只有原生资源发生变化时勾选*
+*第一次需要先完整构建资源包生成缓存文件后，才能进行构建补丁资源包*
+
+*由于补丁资源是通过与上一次完整构建的缓存进行对比计算出的，所以随着变化的资源增多，构建补丁资源的速度也会逐渐接近构建完整资源包的速度，此时就需要重新进行一次完整构建*
+
+*当一个资源包里的所有资源都发生了变化时，构建出的补丁资源包就会转为正式资源包以完全替换旧的资源包，此时将不再具有_patch后缀*
 
 
 
@@ -185,16 +213,16 @@ CatAsset提供了2种运行模式
 单机模式下，在加载资源前需要先进行资源清单检查，才能正确初始化`CatAssetManager`
 
 ```csharp
-CatAssetManager.CheckPackageManifest(Action<bool> callback)
+CatAssetManager.CheckVersion(OnVersionChecked onVersionChecked)
 ```
 
-回调以bool值为参数，表示是否检查成功
+回调以`VersionCheckResult`为参数，包含了是否检查成功的信息
 
 
 
 ## 编辑器资源模式
 
-若勾选**编辑器资源模式**，即可在不进行资源包构建的前提下快速运行游戏，此时CheckPackageManifest会直接返回true
+若勾选**编辑器资源模式**，即可在不进行资源包构建的前提下快速运行游戏，此时CheckVersion会直接返回
 
 
 
@@ -384,6 +412,8 @@ assethandler.Unload()
 
 *可通过`BatchAssetHandler.Unload`来进行对批量加载到的资源的统一卸载*
 
+*可通过`CatAssetManager.UnloadUnusedAssets`来立即卸载所有**引用计数为0且可卸载**的资源以及没有资源在使用中的资源包*
+
 
 
 ## 卸载句柄
@@ -500,7 +530,7 @@ CatAssetManager.CheckVersion(OnVersionChecked onVersionChecked)
 CatAssetManager.UpdateGroup(string group, BundleUpdatedCallback callback)
 ```
 
-`BundleUpdatedCallback`为资源包更新回调，其定义如下：
+`BundleUpdatedCallback`为资源包更新回调，每次更新完毕一个资源包后都会调用此回调，其定义如下：
 
 ```csharp
 public delegate void BundleUpdatedCallback(BundleUpdateResult result);
