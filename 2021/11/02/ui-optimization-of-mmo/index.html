@@ -1,0 +1,273 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>手游MMO项目的UI优化实践 | 仙猫洞</title><meta name="keywords" content="UGUI"><meta name="author" content="自然妙有猫仙人"><meta name="copyright" content="自然妙有猫仙人"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="关于UnityUI性能优化的项目实践">
+<meta property="og:type" content="article">
+<meta property="og:title" content="手游MMO项目的UI优化实践">
+<meta property="og:url" content="http://www.cathole.top/2021/11/02/ui-optimization-of-mmo/index.html">
+<meta property="og:site_name" content="仙猫洞">
+<meta property="og:description" content="关于UnityUI性能优化的项目实践">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/UIOptimizatioOfMMO/UIOptimizatioOfMMO_4.png">
+<meta property="article:published_time" content="2021-11-02T13:18:02.000Z">
+<meta property="article:modified_time" content="2023-06-14T11:52:03.210Z">
+<meta property="article:author" content="自然妙有猫仙人">
+<meta property="article:tag" content="UGUI">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/UIOptimizatioOfMMO/UIOptimizatioOfMMO_4.png"><link rel="shortcut icon" href="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/head2.png"><link rel="canonical" href="http://www.cathole.top/2021/11/02/ui-optimization-of-mmo/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: {"defaultEncoding":2,"translateDelay":0,"msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"簡"},
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '手游MMO项目的UI优化实践',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2023-06-14 19:52:03'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if (GLOBAL_CONFIG_SITE.isHome && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/custom/copyright.css"><link rel="stylesheet" href="/css/custom/index.7dde3304.css"><meta name="generator" content="Hexo 5.4.0"></head><body><div id="web_bg"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/head2.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">24</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">标签</div><div class="length-num">9</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/categories/"><div class="headline">分类</div><div class="length-num">9</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><i class="fa-fw fas fa-list"></i><span> 文章</span><i class="fas fa-chevron-down expand"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></li><li><a class="site-page child" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></li><li><a class="site-page child" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/UIOptimizatioOfMMO/UIOptimizatioOfMMO_4.png')"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">仙猫洞</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><i class="fa-fw fas fa-list"></i><span> 文章</span><i class="fas fa-chevron-down expand"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时间轴</span></a></li><li><a class="site-page child" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></li><li><a class="site-page child" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友情链接</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">手游MMO项目的UI优化实践</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2021-11-02T13:18:02.000Z" title="发表于 2021-11-02 21:18:02">2021-11-02</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2023-06-14T11:52:03.210Z" title="更新于 2023-06-14 19:52:03">2023-06-14</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%A8%8B%E5%BA%8F/">程序</a><i class="fas fa-angle-right post-meta-separator"></i><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E7%A8%8B%E5%BA%8F/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">性能优化</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">2.1k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>7分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="手游MMO项目的UI优化实践"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>本文主要记录笔者去年在一个处于开发后期的UnityMMO项目中，根据UWA性能分析报告进行UI优化的实践经验</p>
+<p>对UI优化的实践主要分为以下几方面：</p>
+<ul>
+<li>Drawcall</li>
+<li>Rebuild</li>
+<li>Rebatch</li>
+<li>Overdraw</li>
+<li>Instance</li>
+</ul>
+<p>本文将从这几个方面出发，回顾在项目中进行UI优化的实践经验</p>
+<h1 id="Drawcall"><a href="#Drawcall" class="headerlink" title="Drawcall"></a>Drawcall</h1><p>Drawcall，即绘制调用命令</p>
+<p>CPU在准备好渲染数据后会通过Drawcall命令通知GPU进行渲染</p>
+<p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/UIOptimizatioOfMMO/UIOptimizatioOfMMO_1.png"></p>
+<p>CPU每次调用Drawcall前准备渲染数据时都会产生不少的性能消耗，而GPU的渲染速度是非常快的，常常出现CPU喂不饱GPU的情况，因此可以通过合批的形式一次性发送大量渲染数据到GPU中，以减少Drawcall调用次数</p>
+<p>UI的合批规则主要根据UI网格覆盖范围计算：</p>
+<ol>
+<li>如果一个UI底下没有其他UI，那么此UI深度为0</li>
+<li>如果一个UI底下有其他UI，并且此UI可以与底下深度最大的UI合批（材质相同），那么此UI深度和那个UI相同</li>
+<li>如果一个UI底下有其他UI，并且不能与底下深度最大的UI合批，那么此UI深度为底下最大深度+1</li>
+<li>计算出深度后，Unity会根据深度排序然后将深度相同的UI用1个Drawcall画出来</li>
+</ol>
+<p>UI的合批主要依靠图集来进行，项目中当然也做了这样的处理，而笔者所做的工作主要在于通过FrameDebugger来进行逐步调试，以查出是什么地方应该合批而没有合批，无法合批的原因是什么</p>
+<h2 id="网格穿插"><a href="#网格穿插" class="headerlink" title="网格穿插"></a>网格穿插</h2><p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/UIOptimizatioOfMMO/UIOptimizatioOfMMO_2.png"></p>
+<p>MMO项目中主界面右上角一般有大量的活动Icon，这些Icon的合批失败会造成许多的额外Drawcall</p>
+<p>项目中活动Icon合批失败的原因，在于红点的网格穿插到了旁边活动Icon的背景图，以致于无法按照期望的那样第1个Drawcall画完所有背景图，第2个Drwacall画完所有红点</p>
+<p>举个简单的例子，在下图中，经过UI深度规则计算，所有白图的深度为0，红图深度为1，所以只需要2个Drawcall</p>
+<p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/UIOptimizatioOfMMO/UIOptimizatioOfMMO_3.png"></p>
+<p>而像下图这样，因为红图位置偏了点，导致第二个白图被覆盖到了红图上，最终深度计算结果就是：白图1的深度为0，红图1的深度为1，白图2的深度为2，红图2的深度为3，只能使用4个Drawcall才能画完</p>
+<p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/UIOptimizatioOfMMO/UIOptimizatioOfMMO_4.png"></p>
+<p>对于这种情况解决方案当然就是调整活动Icon预制，使红点处于正确位置</p>
+<h2 id="Mask组件"><a href="#Mask组件" class="headerlink" title="Mask组件"></a>Mask组件</h2><p>在使用UI的滚动列表时，通常默认的遮罩组件是Mask</p>
+<p>Mask遮罩的实现原理是模板缓存，其坑点在于自身就会造成额外Drawcall，并且被Mask隐藏掉的物体并不是真正的被裁剪了</p>
+<p>通过将Scene界面的Shading Mode设置为Wireframe，会看到这些物体的网格信息仍然存在，仍然被视为渲染中的物体，这也就意味着如果这些item是无法合批的，那么会造成大量的额外Drawcall，事实上笔者就曾经遇到过这样一个Drawcall高达数百的item列表</p>
+<p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/UIOptimizatioOfMMO/UIOptimizatioOfMMO_5.png"></p>
+<p>解决方案主要是将Mask替换为RectMask2D，其实现原理为调用了Shader中的Clip函数，实现了对遮罩隐藏物体的真正裁剪，并且该组件本身也不会造成额外Drawcall</p>
+<p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/UIOptimizatioOfMMO/UIOptimizatioOfMMO_6.png"></p>
+<h2 id="Z值不为0"><a href="#Z值不为0" class="headerlink" title="Z值不为0"></a>Z值不为0</h2><p>曾经有一次拿FrameDebugger死活没看出来为啥UI合批失败，最后还是主程提醒了一下才发现是有UI的PosZ值不为0导致的</p>
+<h1 id="Rebuild"><a href="#Rebuild" class="headerlink" title="Rebuild"></a>Rebuild</h1><p>Rebuild是指当UI自身发生变化时，从C#层发出的UI重建（比如缩放UI，切换图片，开关UI），一般都会造成不小的性能开销</p>
+<p>其在Profiler中为Canvas.SendWillRenderCanvases项，其中CanvasUpdateRegistry.LayoutRebuild为重建布局信息，CanvasUpdateRegistry.GraphicRebuild为重建网格与材质信息</p>
+<p>这一项主要依靠通过脚本反射两个Rebuild队列进行监控，找出高频触发Rebuild的UI然后进行针对性优化</p>
+<p>脚本代码如下：</p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> System.Collections;</span><br><span class="line"><span class="keyword">using</span> System.Collections.Generic;</span><br><span class="line"><span class="keyword">using</span> UnityEngine;</span><br><span class="line"><span class="keyword">using</span> UnityEngine.UI;</span><br><span class="line"><span class="keyword">using</span> System;</span><br><span class="line"><span class="keyword">using</span> System.Reflection;</span><br><span class="line"><span class="keyword">using</span> System.Text;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UIRebuildLogger</span> : <span class="title">MonoBehaviour</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> 是否开启帧模式，</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> 帧模式下关心每一帧有哪些UI元素触发了Rebuild，</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> 非帧模式下则关心UI元素触发了多少次Rebuild（建议开启Console的Collapse）</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    [<span class="meta">Tooltip(<span class="meta-string">&quot;是否开启帧模式，\n帧模式下关心每一帧有哪些UI元素触发了Rebuild，\n非帧模式下则关心UI元素触发了多少次Rebuild（建议开启Console的Collapse）&quot;</span>)</span>]</span><br><span class="line">    [<span class="meta">SerializeField</span>]</span><br><span class="line">    <span class="built_in">bool</span> m_FrameMode;</span><br><span class="line"></span><br><span class="line">    IList&lt;ICanvasElement&gt; m_LayoutRebuildQueue;</span><br><span class="line">    IList&lt;ICanvasElement&gt; m_GraphicRebuildQueue;</span><br><span class="line">    StringBuilder sb = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">Awake</span>(<span class="params"></span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        Type type = <span class="keyword">typeof</span>(CanvasUpdateRegistry);</span><br><span class="line">        FieldInfo field = type.GetField(<span class="string">&quot;m_LayoutRebuildQueue&quot;</span>, BindingFlags.NonPublic | BindingFlags.Instance);</span><br><span class="line">        m_LayoutRebuildQueue = (IList&lt;ICanvasElement&gt;)field.GetValue(CanvasUpdateRegistry.instance);</span><br><span class="line">        field = type.GetField(<span class="string">&quot;m_GraphicRebuildQueue&quot;</span>, BindingFlags.NonPublic | BindingFlags.Instance);</span><br><span class="line">        m_GraphicRebuildQueue = (IList&lt;ICanvasElement&gt;)field.GetValue(CanvasUpdateRegistry.instance);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">Update</span>(<span class="params"></span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">       </span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="built_in">int</span> j = <span class="number">0</span>; j &lt; m_LayoutRebuildQueue.Count; j++)</span><br><span class="line">        &#123;</span><br><span class="line">            ICanvasElement element = m_LayoutRebuildQueue[j];</span><br><span class="line">            <span class="keyword">if</span> (!ObjectValidForUpdata(element))</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            Graphic graphic = element.transform.GetComponent&lt;Graphic&gt;();</span><br><span class="line">            <span class="keyword">if</span> (graphic == <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            Canvas canvas = graphic.canvas;</span><br><span class="line">            <span class="keyword">if</span> (canvas == <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="built_in">string</span> str = <span class="string">$&quot;&lt;color=#ff0000&gt;<span class="subst">&#123;element.transform.name&#125;</span>&lt;/color&gt;的LayoutRebuild引起&lt;color=#ff0000&gt;<span class="subst">&#123;canvas.name&#125;</span>&lt;/color&gt;网格重建&quot;</span>;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (m_FrameMode)</span><br><span class="line">            &#123;</span><br><span class="line">                sb.AppendLine(str);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span></span><br><span class="line">            &#123;</span><br><span class="line">                Debug.LogError(str);</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="built_in">int</span> j = <span class="number">0</span>; j &lt; m_GraphicRebuildQueue.Count; j++)</span><br><span class="line">        &#123;</span><br><span class="line">            ICanvasElement element = m_GraphicRebuildQueue[j];</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (!ObjectValidForUpdata(element))</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            Graphic graphic = element.transform.GetComponent&lt;Graphic&gt;();</span><br><span class="line">            <span class="keyword">if</span> (graphic == <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            Canvas canvas = graphic.canvas;</span><br><span class="line">            <span class="keyword">if</span> (canvas == <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">            <span class="built_in">string</span> canvansName = canvas.name;</span><br><span class="line">            <span class="keyword">if</span> (canvansName == <span class="string">&quot;DebugFps&quot;</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="built_in">string</span> str = <span class="string">$&quot;&lt;color=#ff0000&gt;<span class="subst">&#123;element.transform.name&#125;</span>&lt;/color&gt;的LayoutRebuild引起&lt;color=#ff0000&gt;<span class="subst">&#123;canvas.name&#125;</span>&lt;/color&gt;网格重建&quot;</span>;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (m_FrameMode)</span><br><span class="line">            &#123;</span><br><span class="line">                sb.AppendLine(str);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">else</span></span><br><span class="line">            &#123;</span><br><span class="line">                Debug.LogError(str);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (sb.Length != <span class="number">0</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            Debug.LogError(<span class="string">$&quot;当前帧&lt;color=#66ccff&gt;<span class="subst">&#123;Time.frameCount&#125;</span>&lt;/color&gt;:\n<span class="subst">&#123;sb.ToString()&#125;</span>&quot;</span>);</span><br><span class="line">            sb.Clear();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="built_in">bool</span> <span class="title">ObjectValidForUpdata</span>(<span class="params">ICanvasElement element</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">bool</span> valid = element != <span class="literal">null</span>;</span><br><span class="line">        <span class="built_in">bool</span> isUnityObject = element <span class="keyword">is</span> UnityEngine.Object;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (isUnityObject)</span><br><span class="line">        &#123;</span><br><span class="line">            valid  = (element <span class="keyword">as</span> UnityEngine.Object) != <span class="literal">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> valid;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="Rebatch"><a href="#Rebatch" class="headerlink" title="Rebatch"></a>Rebatch</h1><p>Rebatch指以Canvas为单位的UI网格合并，其在Profiler中体现为Canvas.BuildBatch项，Rebuild通常都会引发Rebatch，UI的位置移动也会触发Rebatch</p>
+<p>因此对于需要频繁改变的UI，就需要通过子Canvas与不变的UI分开，以降低改变每次改变UI导致的Rebatch开销，这也被称之为动静分离</p>
+<p>但是不同Canvas下的UI是不能合批的，按照Unity官方的说法，在开启了<strong>多线程渲染</strong>的情况下，已经不建议再做动静分离了</p>
+<h1 id="Overdraw"><a href="#Overdraw" class="headerlink" title="Overdraw"></a>Overdraw</h1><p>在渲染管线中，对于不透明物体，其绘制顺序都是从前往后绘制，这样被挡住的物体就不会再被绘制，继而节省了GPU渲染开销</p>
+<p>而半透明物体则是从后往前渲染，因为半透明物体需要进行颜色混合，从前往后渲染会导致在一个半透明物体遮挡另一个半透明物体时，颜色混合结果不正确</p>
+<p>Overdraw即过度绘制，意为一个像素被反复绘制了多次，这种情况通常发生在半透明物体的渲染中</p>
+<p>在实际开发中，为了实现一个点击弹窗空白区域关闭弹窗UI的效果，往往会使用一个完全透明的Image放在弹窗底下，而由于Unity中所有UI都是作为半透明物体进行渲染的，这样做就会造成Overdraw现象</p>
+<p><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/UIOptimizatioOfMMO/UIOptimizatioOfMMO_7.png"></p>
+<p>解决方案是通过继承Image组件重写OnPopulateMesh方法，将顶点信息清空</p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> UnityEngine;</span><br><span class="line"><span class="keyword">using</span> System.Collections;</span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> <span class="title">UnityEngine.UI</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Empty4Raycast</span> : <span class="title">MaskableGraphic</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="function"><span class="keyword">protected</span> <span class="title">Empty4Raycast</span>(<span class="params"></span>)</span></span><br><span class="line">        &#123;</span><br><span class="line">            useLegacyMeshGeneration = <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">OnPopulateMesh</span>(<span class="params">VertexHelper toFill</span>)</span></span><br><span class="line">        &#123;</span><br><span class="line">            toFill.Clear();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="Instance"><a href="#Instance" class="headerlink" title="Instance"></a>Instance</h1><p>在打开一个诸如背包这样有很多Item的界面时，通常会感觉到明显的卡顿</p>
+<p>其原因主要在于一次性实例化了过多GameObject，而Unity中GameObject的实例化只能在主线程进行，一次性实例化太多就会卡住主线程的执行</p>
+<p>解决方案就是通过定时器实现分帧加载与实例化，这样可以做到对背包之类的多Item界面打开时玩家会有很丝滑的体验</p>
+</article><div class="post-copyright"><div class="post-copyright__title"><span class="post-copyright-info"><h>手游MMO项目的UI优化实践</h></span></div><div class="post-copyright__type"><span class="post-copyright-info"><a href="http://www.cathole.top/2021/11/02/ui-optimization-of-mmo/">http://www.cathole.top/2021/11/02/ui-optimization-of-mmo/</a></span></div><div class="post-copyright-m"><div class="post-copyright-m-info"><div class="post-copyright-a" style="display: inline-block;width: 120px"><h>作者</h><div class="post-copyright-cc-info"><h>自然妙有猫仙人</h></div></div><div class="post-copyright-c" style="display: inline-block;width: 120px"><h>发布于</h><div class="post-copyright-cc-info"><h>2021-11-02</h></div></div><div class="post-copyright-u" style="display: inline-block;width: 120px"><h>更新于</h><div class="post-copyright-cc-info"><h>2023-06-14</h></div></div><div class="post-copyright-c" style="display: inline-block;width: 120px"><h>许可协议</h><div class="post-copyright-cc-info"><a class="icon" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a><a rel="noopener" target="_blank" title="CC BY 4.0" href="https://creativecommons.org/licenses/by/4.0/deed.zh">CC BY 4.0</a></div></div></div></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/UGUI/">UGUI</a></div><div class="post_share"><div class="social-share" data-image="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/UIOptimizatioOfMMO/UIOptimizatioOfMMO_4.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2021/11/09/catlua-dev-summary/"><img class="prev-cover" src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatLuaDevSummary/CatLuaDevSummary_1.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">CatLua开发总结</div></div></a></div><div class="next-post pull-right"><a href="/2021/10/29/dependency-manage-compare/"><img class="next-cover" src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/DependencyManageCompare/DependencyManageCompare_4.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">Unity资源框架设计中不同级别依赖管理的对比</div></div></a></div></nav><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/head2.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">自然妙有猫仙人</div><div class="author-info__description">一个爱摸鱼的游戏程序员</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">24</div></a></div><div class="card-info-data-item is-center"><a href="/tags/"><div class="headline">标签</div><div class="length-num">9</div></a></div><div class="card-info-data-item is-center"><a href="/categories/"><div class="headline">分类</div><div class="length-num">9</div></a></div></div><div class="card-info-social-icons is-center"><a class="social-icon" href="https://github.com/CatImmortal" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="mailto:1304085906@qq.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a><a class="social-icon" href="tencent://message/?uin=1304085906&amp;Site=Sambow&amp;Menu=yes" target="_blank" title="QQ"><i class="fab fa-qq"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn card-announcement-animation"></i><span>公告</span></div><div class="announcement_content">QQ交流群：762036315</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Drawcall"><span class="toc-number">2.</span> <span class="toc-text">Drawcall</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BD%91%E6%A0%BC%E7%A9%BF%E6%8F%92"><span class="toc-number">2.1.</span> <span class="toc-text">网格穿插</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Mask%E7%BB%84%E4%BB%B6"><span class="toc-number">2.2.</span> <span class="toc-text">Mask组件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Z%E5%80%BC%E4%B8%8D%E4%B8%BA0"><span class="toc-number">2.3.</span> <span class="toc-text">Z值不为0</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Rebuild"><span class="toc-number">3.</span> <span class="toc-text">Rebuild</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Rebatch"><span class="toc-number">4.</span> <span class="toc-text">Rebatch</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Overdraw"><span class="toc-number">5.</span> <span class="toc-text">Overdraw</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Instance"><span class="toc-number">6.</span> <span class="toc-text">Instance</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2023/04/20/assetbundle-build-patch/" title="在Unity中构建AssetBundle补丁包"><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/top_image.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="在Unity中构建AssetBundle补丁包"/></a><div class="content"><a class="title" href="/2023/04/20/assetbundle-build-patch/" title="在Unity中构建AssetBundle补丁包">在Unity中构建AssetBundle补丁包</a><time datetime="2023-04-20T13:04:54.000Z" title="发表于 2023-04-20 21:04:54">2023-04-20</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2022/12/31/2022-year-end-summary/" title="2022年终总结"><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/top_image.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="2022年终总结"/></a><div class="content"><a class="title" href="/2022/12/31/2022-year-end-summary/" title="2022年终总结">2022年终总结</a><time datetime="2022-12-31T08:58:24.000Z" title="发表于 2022-12-31 16:58:24">2022-12-31</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2022/11/26/sbp-spriteatlas-bug/" title="UnitySBP打包SpriteAtlas图集时的纹理冗余Bug"><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/top_image.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="UnitySBP打包SpriteAtlas图集时的纹理冗余Bug"/></a><div class="content"><a class="title" href="/2022/11/26/sbp-spriteatlas-bug/" title="UnitySBP打包SpriteAtlas图集时的纹理冗余Bug">UnitySBP打包SpriteAtlas图集时的纹理冗余Bug</a><time datetime="2022-11-26T07:11:56.000Z" title="发表于 2022-11-26 15:11:56">2022-11-26</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2022/09/04/catasset-dev-summary-with-runtime/" title="CatAsset开发总结：Runtime篇"><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatAssetDevSummaryWithRuntime/CatAssetDevSummaryWithRuntime_01.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="CatAsset开发总结：Runtime篇"/></a><div class="content"><a class="title" href="/2022/09/04/catasset-dev-summary-with-runtime/" title="CatAsset开发总结：Runtime篇">CatAsset开发总结：Runtime篇</a><time datetime="2022-09-04T00:56:01.000Z" title="发表于 2022-09-04 08:56:01">2022-09-04</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2022/09/01/catasset-dev-summary-with-editor/" title="CatAsset开发总结：Editor篇"><img src="https://cathole-1307936347.cos.ap-guangzhou.myqcloud.com/CatAssetDevSummaryWithEditor/CatAssetDevSummaryWithEditor_01.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="CatAsset开发总结：Editor篇"/></a><div class="content"><a class="title" href="/2022/09/01/catasset-dev-summary-with-editor/" title="CatAsset开发总结：Editor篇">CatAsset开发总结：Editor篇</a><time datetime="2022-09-01T13:02:08.000Z" title="发表于 2022-09-01 21:02:08">2022-09-01</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2021 - 2023 By 自然妙有猫仙人</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="translateLink" type="button" title="简繁转换">繁</button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><div class="search-dialog__title" id="local-search-title">本地搜索</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div></div><hr/><div id="local-search-results"></div><span class="search-close-button"><i class="fas fa-times"></i></span></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"><script>(()=>{
+  const $countDom = document.getElementById('twikoo-count')
+  const init = () => {
+    twikoo.init(Object.assign({
+      el: '#twikoo-wrap',
+      envId: 'https://twikoo-weld.vercel.app/',
+      region: ''
+    }, null))
+  }
+
+  const getCount = () => {
+    twikoo.getCommentsCount({
+      envId: 'https://twikoo-weld.vercel.app/',
+      region: '',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(function (res) {
+      $countDom.innerText = res[0].count
+    }).catch(function (err) {
+      console.error(err);
+    });
+  }
+
+  const loadTwikoo = (bool = false) => {
+    if (typeof twikoo === 'object') {
+      init()
+      bool && $countDom && setTimeout(getCount,0)
+    } else {
+      getScript('https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js').then(()=> {
+        init()
+        bool && $countDom && setTimeout(getCount,0)
+      })
+    }
+  }
+
+  if ('Twikoo' === 'Twikoo' || !true) {
+    if (true) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else loadTwikoo(true)
+  } else {
+    window.loadOtherComment = () => {
+      loadTwikoo()
+    }
+  }
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div><!-- hexo injector body_end start -->
+  <script data-pjax src="https://cdn.jsdelivr.net/gh/Zfour/hexo-github-calendar@1.21/hexo_githubcalendar.js"></script>
+  <script data-pjax>
+        function GithubCalendarConfig(){
+            var git_githubapiurl ="https://python-github-calendar-api.vercel.app/api?CatImmortal";
+            var git_color =['#ebedf0', '#fdcdec', '#fc9bd9', '#fa6ac5', '#f838b2', '#f5089f', '#c4067e', '#92055e', '#540336', '#48022f', '#30021f'];
+            var git_user ="CatImmortal";
+            var parent_div_git = document.getElementById('recent-posts');
+            var git_div_html = '<div class="recent-post-item" style="width:100%;height:auto;padding:10px;"><div id="github_loading" style="width:10%;height:100%;margin:0 auto;display: block"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  viewBox="0 0 50 50" style="enable-background:new 0 0 50 50" xml:space="preserve"><path fill="#d0d0d0" d="M25.251,6.461c-10.318,0-18.683,8.365-18.683,18.683h4.068c0-8.071,6.543-14.615,14.615-14.615V6.461z" transform="rotate(275.098 25 25)"><animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="0.6s" repeatCount="indefinite"></animateTransform></path></svg></div><div id="github_container"></div></div>';
+            if(parent_div_git && location.pathname =='/'){
+                console.log('已挂载github calendar')
+                // parent_div_git.innerHTML=git_div_html+parent_div_git.innerHTML // 无报错，但不影响使用(支持pjax跳转)
+                parent_div_git.insertAdjacentHTML("afterbegin",git_div_html) // 有报错，但不影响使用(支持pjax跳转)
+            };
+            GithubCalendar(git_githubapiurl,git_color,git_user)
+        }
+        if(document.getElementById('recent-posts')){
+            GithubCalendarConfig()
+        }
+    </script>
+    <style>#github_container{min-height:280px}@media screen and (max-width:650px) {#github_container{background-image:;min-height:0px}}</style>
+    <style></style><!-- hexo injector body_end end --></body></html>
