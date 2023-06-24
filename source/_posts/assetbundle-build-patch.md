@@ -51,11 +51,19 @@ description: 如何仅构建发生了变化的资源
 
 # 构建补丁包时要注意的地方
 
-想要进行补丁包构建，首先需要记录上次完整打包的缓存信息，在CatAsset中是通过记录文件MD5实现，但不仅仅是资源文件的MD5，还需要包括资源文件对应的Meta文件的MD5才行，否则会导致补丁资源计算出错，因为有些对资源的修改是被反应到Meta文件里的
+想要进行补丁包构建，首先需要记录上次完整打包的缓存信息，在CatAsset中是通过记录文件**最后写入时间**实现，但不仅仅是资源文件的最后写入时间，还需要包括资源文件对应的Meta文件的**最后写入时间**才行，否则会导致补丁资源计算出错，因为有些对资源的修改是被反应到Meta文件里的
 
 
 
-另外在计算补丁资源时，不仅是需要判断资源自身是否有变化，还需要考虑它所在的依赖链上的其他资源是否有变化，若依赖链上任意一个资源发生了变化，则此依赖链上所有资源都必须视为补丁资源处理，**因为只有在同一批AssetBundle打包的资源之间才能正确进行互相的依赖引用**，否则就会产生加载后资源依赖丢失的问题
+另外在计算补丁资源时，不仅是需要判断资源自身是否有变化，还需要考虑它所依赖的资源是否为补丁资源，若它所依赖（直接或间接）的任意一个资源为补丁资源，则此资源也必须视为补丁资源处理（这就意味着**补丁资源具有下游传染性**，会传染给依赖链下游的所有资源），**因为只有在同一批AssetBundle打包的资源之间才能正确进行互相的依赖引用**，否则就会产生**依赖补丁资源的资源，其依赖加载的是旧资源而非新的补丁资源**的问题
+
+
+
+对于补丁资源所依赖的资源，则采用隐式依赖自动包含的机制，不对其进行显式构建，且从补丁资源的依赖列表中移除，以此故意冗余一份相同的依赖资源到补丁资源所在的补丁包中，加载时让Unity自动加载，以保证正式包和补丁包的依赖到相同资源时都能被正确的加载到
+
+
+
+举例来说，假设有依赖链为**D -> C -> B -> A**和**D -> E**，且C为变化的资源，那么最终会将**C以及依赖C的B和A**作为补丁资源，**D作为C的隐式依赖**包含进C的补丁包里，运行时**E依赖的D和C依赖的D会分别在不同的包里**保证E的依赖不丢失（因为在补丁构建后会将资源清单中的旧资源信息删除，保留新的补丁资源信息，以保证能加载到最新的补丁资源）
 
 
 
@@ -66,7 +74,7 @@ description: 如何仅构建发生了变化的资源
 CatAsset使用SBP进行AssetBundle构建，并自定义了一些构建任务来满足需求
 
 ```csharp
-        /// <summary>
+		/// <summary>
         /// 构建资源包
         /// </summary>
         public static ReturnCode BuildBundles(BuildTarget targetPlatform,bool isBuildPatch)
@@ -108,14 +116,15 @@ CatAsset使用SBP进行AssetBundle构建，并自定义了一些构建任务来�
             taskList.Add(new BuildManifest());
             taskList.Add(new EncryptBundles());
             taskList.Add(new CalculateVerifyInfo());
-            if (HasOption(config.Options,BundleBuildOptions.AppendMD5))
+            if (HasOption(config.Options,BundleBuildOptions.AppendHash))
             {
-                //附加MD5到包名中
-                taskList.Add(new AppendMD5());
+                //附加Hash到包名中
+                taskList.Add(new AppendHash());
             }
             if (isBuildPatch)
             {
                 //补丁包需要合并资源清单
+                taskList.Add(new RemoveNonPatchDependency());
                 taskList.Add(new MergePatchManifest());
             }
             taskList.Add(new WriteManifestFile());
@@ -180,6 +189,7 @@ CatAsset使用SBP进行AssetBundle构建，并自定义了一些构建任务来�
 ```csharp
 using System;
 using System.Collections.Generic;
+using System.IO;
 using CatAsset.Runtime;
 
 namespace CatAsset.Editor
@@ -197,12 +207,33 @@ namespace CatAsset.Editor
         public struct AssetCacheInfo : IEquatable<AssetCacheInfo>
         {
             public string Name;
-            public string MD5;
-            public string MetaMD5;
+            public long LastWriteTime;
+            public long MetaLastWriteTime;
+            
+            public static AssetCacheInfo Create(string assetName)
+            {
+                AssetCacheInfo assetCacheInfo = new AssetCacheInfo
+                {
+                    Name = assetName,
+                    LastWriteTime = File.GetLastWriteTime(assetName).Ticks,
+                    MetaLastWriteTime =  File.GetLastWriteTime($"{assetName}.meta").Ticks,
+                };
+                return assetCacheInfo;
+            }
+
+            public static bool operator ==(AssetCacheInfo a,AssetCacheInfo b)
+            {
+                return Equals(a, b);
+            }
+            
+            public static bool operator !=(AssetCacheInfo a,AssetCacheInfo b)
+            {
+                return !(a == b);
+            }
             
             public bool Equals(AssetCacheInfo other)
             {
-                return Name == other.Name && MD5 == other.MD5 && MetaMD5 == other.MetaMD5;
+                return Name == other.Name && LastWriteTime == other.LastWriteTime && MetaLastWriteTime == other.MetaLastWriteTime;
             }
 
             public override bool Equals(object obj)
@@ -215,33 +246,11 @@ namespace CatAsset.Editor
                 unchecked
                 {
                     var hashCode = (Name != null ? Name.GetHashCode() : 0);
-                    hashCode = (hashCode * 397) ^ (MD5 != null ? MD5.GetHashCode() : 0);
-                    hashCode = (hashCode * 397) ^ (MetaMD5 != null ? MetaMD5.GetHashCode() : 0);
+                    hashCode = (hashCode * 397) ^ LastWriteTime.GetHashCode();
+                    hashCode = (hashCode * 397) ^ MetaLastWriteTime.GetHashCode();
                     return hashCode;
                 }
             }
-            
-            public static bool operator ==(AssetCacheInfo a,AssetCacheInfo b)
-            {
-                return Equals(a, b);
-            }
-            
-            public static bool operator !=(AssetCacheInfo a,AssetCacheInfo b)
-            {
-                return !(a == b);
-            }
-
-            public static AssetCacheInfo Create(string assetName)
-            {
-                AssetCacheInfo assetCacheInfo = new AssetCacheInfo
-                {
-                    Name = assetName,
-                    MD5 = RuntimeUtil.GetFileMD5(assetName),
-                    MetaMD5 = RuntimeUtil.GetFileMD5($"{assetName}.meta")
-                };
-                return assetCacheInfo;
-            }
-          
         }
         
         /// <summary>
@@ -259,7 +268,7 @@ namespace CatAsset.Editor
             {
                 result.Add(assetCache.Name,assetCache);
             }
-
+            
             return result;
         }
         
@@ -268,7 +277,7 @@ namespace CatAsset.Editor
 }
 ```
 
-正如之前提到的，除了资源文件本身的MD5外还需要记录Meta文件的MD5
+正如之前提到的，除了资源文件本身的**最后写入时间**外还需要记录Meta文件的**最后写入时间**
 
 
 
@@ -332,7 +341,7 @@ namespace CatAsset.Editor
 }
 ```
 
-除了记录资源MD5信息外，还需要将完整构建产出的资源包复制到资源包缓存目录下，用于在补丁构建后进行合并形成最终的完整资源包输出
+除了记录资源**最后写入时间**外，还需要将完整构建产出的资源包复制到资源包缓存目录下，用于在补丁构建后进行合并形成最终的完整资源包输出
 
 
 
@@ -341,12 +350,11 @@ namespace CatAsset.Editor
 补丁资源的计算大致由以下步骤组成：
 
 1. 判断自身是否变化
-2. 判断自身依赖的资源是否变化
-3. 判断依赖自身的资源是否变化
+2. 判断自身依赖的资源是否为补丁资源
 
 
 
-判断【资源是否变化】的标准则为：
+判断【资源是否变化】的步骤则为：
 
 1. 是否为新资源
 2. 是否为变化的旧资源
@@ -378,6 +386,7 @@ namespace CatAsset.Editor
     public class CalculateBundleBuilds : IBuildTask
     {
         public int Version { get; }
+
 
         [InjectContext(ContextUsage.In)] 
         private IBundleBuildParameters buildParam;
@@ -412,42 +421,7 @@ namespace CatAsset.Editor
                 //构建补丁资源包
                 Stopwatch sw = Stopwatch.StartNew();
                 
-                //双向依赖记录
-                Dictionary<string, List<string>> upStreamDict = new Dictionary<string, List<string>>();
-                Dictionary<string, List<string>> downStreamDict = new Dictionary<string, List<string>>();
-
-                //资源名 -> 本次构建时所属的资源包名
-                Dictionary<string, string> assetToBundle = new Dictionary<string, string>();
-
-                //资源名 -> 上次完整构建时所属的资源包名
-                Dictionary<string, string> cacheAssetToBundle = new Dictionary<string, string>();
-                
-                //读取上次完整构建时的资源缓存清单
-                AssetCacheManifest assetCacheManifest = ReadAssetCache(config);
-                
-                //资源名 -> 上次完整构建时的资源缓存信息
-                Dictionary<string, AssetCacheManifest.AssetCacheInfo>
-                    assetCacheDict = assetCacheManifest.GetCacheDict();
-
-                //资源名 -> 当前资源缓存信息
-                Dictionary<string, AssetCacheManifest.AssetCacheInfo> curAssetCacheDict =
-                    new Dictionary<string, AssetCacheManifest.AssetCacheInfo>();
-
-                //资源名 -> 是否已变化
-                Dictionary<string, bool> assetChangeStateDict = new Dictionary<string, bool>();
-
-                //深拷贝一份构建配置进行操作
-                BundleBuildConfigSO clonedConfig = Object.Instantiate(config);
-                
-                //获取双向依赖
-                GetDependencyChain(config, upStreamDict, downStreamDict, assetToBundle);
-                
-                //读取上次完整构建时的资源包信息
-                ReadCachedManifest(config, cacheAssetToBundle);
-                
-                //计算补丁资源
-                CalPatchAsset(config, clonedConfig, upStreamDict, downStreamDict, assetToBundle, cacheAssetToBundle,
-                    assetCacheDict, curAssetCacheDict, assetChangeStateDict);
+                var clonedConfig = new PatchAssetCalculateHelper().Calculate(config, configParam.TargetPlatform);
 
                 sw.Stop();
                 Debug.Log($"计算补丁资源耗时:{sw.Elapsed.TotalSeconds:0.00}秒");
@@ -464,156 +438,118 @@ namespace CatAsset.Editor
             return ReturnCode.Success;
         }
 
-        /// <summary>
-        /// 获取双向依赖
-        /// </summary>
-        private void GetDependencyChain(BundleBuildConfigSO config, Dictionary<string, List<string>> upStreamDict,
-            Dictionary<string, List<string>> downStreamDict,
-            Dictionary<string, string> assetToBundle)
+
+       
+
+    }
+}
+```
+
+
+
+```csharp
+using System.Collections.Generic;
+using System.IO;
+using CatAsset.Runtime;
+using UnityEditor;
+using UnityEngine;
+
+namespace CatAsset.Editor
+{
+    /// <summary>
+    /// 补丁资源计算辅助类
+    /// </summary>
+    public class PatchAssetCalculateHelper
+    {
+        //上游依赖记录
+        private Dictionary<string, List<string>> upStreamDict = new Dictionary<string, List<string>>();
+
+        //资源名 -> 本次构建时所属的资源包名
+        private Dictionary<string, string> assetToBundle = new Dictionary<string, string>();
+
+        //资源名 -> 上次完整构建时所属的资源包名
+        private Dictionary<string, string> cacheAssetToBundle = new Dictionary<string, string>();
+                
+        //读取上次完整构建时的资源缓存清单
+        private AssetCacheManifest assetCacheManifest;
+                
+        //资源名 -> 上次完整构建时的资源缓存信息
+        private Dictionary<string, AssetCacheManifest.AssetCacheInfo> assetCacheDict;
+
+        //资源名 -> 当前资源缓存信息
+        private Dictionary<string, AssetCacheManifest.AssetCacheInfo> curAssetCacheDict =
+            new Dictionary<string, AssetCacheManifest.AssetCacheInfo>();
+
+        //资源名 -> 是否已变化
+        private Dictionary<string, bool> assetChangeStateDict = new Dictionary<string, bool>();
+        
+        //资源名 -> 是否为补丁资源
+        private Dictionary<string, bool> assetPatchStateDict = new Dictionary<string, bool>();
+
+
+        
+        public BundleBuildConfigSO Calculate(BundleBuildConfigSO config, BuildTarget buildTarget)
         {
-            int index = 0;
-            foreach (var bundle in config.Bundles)
-            {
-                foreach (var asset in bundle.Assets)
-                {
-                    index++;
-                    EditorUtility.DisplayProgressBar($"获取依赖信息", $"{asset.Name}", index / (config.AssetCount * 1.0f));
-                    
-                    //上游依赖
-                    var deps = EditorUtil.GetDependencies(asset.Name);
-                    upStreamDict.Add(asset.Name, deps);
-
-                    //下游依赖
-                    foreach (string dep in deps)
-                    {
-                        if (!downStreamDict.TryGetValue(dep, out List<string> list))
-                        {
-                            list = new List<string>();
-                            downStreamDict.Add(dep, list);
-                        }
-
-                        list.Add(asset.Name);
-                    }
-
-                    assetToBundle.Add(asset.Name, bundle.BundleIdentifyName);
-                }
-            }
+            assetCacheManifest = ReadAssetCache(config);
+            assetCacheDict = assetCacheManifest.GetCacheDict();
             
-            EditorUtility.ClearProgressBar();
-        }
+            //深拷贝一份构建配置进行操作
+            BundleBuildConfigSO clonedConfig = Object.Instantiate(config);
+            
+            //获取依赖
+            GetDependencyChain(config);
+                
+            //读取上次完整构建时的资源包信息
+            ReadCachedManifest(config,buildTarget);
+                
+            //计算补丁资源
+            CalPatchAsset(config, clonedConfig);
 
-        /// <summary>
-        /// 读取上次完整构建时的资源包信息
-        /// </summary>
-        private void ReadCachedManifest(BundleBuildConfigSO config, Dictionary<string, string> cacheAssetToBundle)
-        {
-            string folder = EditorUtil.GetBundleCacheFolder(config.OutputRootDirectory, configParam.TargetPlatform);
-            string path = RuntimeUtil.GetRegularPath(Path.Combine(folder, CatAssetManifest.ManifestJsonFileName));
-            CatAssetManifest cachedManifest = CatAssetManifest.DeserializeFromJson(File.ReadAllText(path));
-            foreach (var bundle in cachedManifest.Bundles)
-            {
-                foreach (var asset in bundle.Assets)
-                {
-                    cacheAssetToBundle.Add(asset.Name, bundle.BundleIdentifyName);
-                }
-            }
+            return clonedConfig;
         }
-
-        /// <summary>
-        /// 读取上次完整构建时的资源缓存清单
-        /// </summary>
-        private static AssetCacheManifest ReadAssetCache(BundleBuildConfigSO config)
-        {
-            string folder = EditorUtil.GetAssetCacheManifestFolder(config.OutputRootDirectory);
-            string path = RuntimeUtil.GetRegularPath(Path.Combine(folder, AssetCacheManifest.ManifestJsonFileName));
-            string json = File.ReadAllText(path);
-            AssetCacheManifest assetCacheManifest = JsonUtility.FromJson<AssetCacheManifest>(json);
-            return assetCacheManifest;
-        }
-
+        
+        //省略...
+        
         /// <summary>
         /// 计算补丁资源
         /// </summary>
-        private void CalPatchAsset(BundleBuildConfigSO config, BundleBuildConfigSO clonedConfig,
-            Dictionary<string, List<string>> upStreamDict, Dictionary<string, List<string>> downStreamDict,
-            Dictionary<string, string> assetToBundle, Dictionary<string, string> cacheAssetToBundle,
-            Dictionary<string, AssetCacheManifest.AssetCacheInfo> assetCacheDict,
-            Dictionary<string, AssetCacheManifest.AssetCacheInfo> curAssetCacheDict,
-            Dictionary<string, bool> assetChangeStateDict)
+        private void CalPatchAsset(BundleBuildConfigSO config, BundleBuildConfigSO clonedConfig)
         {
-         
             int index = 0;
             for (int i = clonedConfig.Bundles.Count - 1; i >= 0; i--)
             {
                 var bundle = clonedConfig.Bundles[i];
 
-                //此资源包是否全部资源都变化了
-                bool isAllChanged = true;
+                //此资源包是否全部资源都是补丁资源
+                bool isAllPatch = true;
 
                 for (int j = bundle.Assets.Count - 1; j >= 0; j--)
                 {
                     var asset = bundle.Assets[j];
                     index++;
                     EditorUtility.DisplayProgressBar($"计算补丁资源", $"{asset.Name}", index / (config.AssetCount * 1.0f));
-
-                    //1.自身是否变化
-                    bool isChanged = IsChangedAsset(asset.Name, assetChangeStateDict, assetCacheDict, curAssetCacheDict,
-                        assetToBundle, cacheAssetToBundle);
-
-                    if (!isChanged)
-                    {
-                        //2.此资源依赖的资源是否变化
-                        if (upStreamDict.TryGetValue(asset.Name, out var upStreamList))
-                        {
-                            foreach (string upStream in upStreamList)
-                            {
-                                isChanged = IsChangedAsset(upStream, assetChangeStateDict, assetCacheDict,
-                                    curAssetCacheDict,
-                                    assetToBundle, cacheAssetToBundle);
-                                if (isChanged)
-                                {
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if (!isChanged)
-                    {
-                        //3.依赖此资源的资源是否变化
-                        if (downStreamDict.TryGetValue(asset.Name, out var downStreamList))
-                        {
-                            foreach (string downStream in downStreamList)
-                            {
-                                isChanged = IsChangedAsset(downStream, assetChangeStateDict, assetCacheDict,
-                                    curAssetCacheDict,
-                                    assetToBundle, cacheAssetToBundle);
-                                if (isChanged)
-                                {
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if (isChanged)
+                    
+                    bool isPatch = IsPatchAsset(asset.Name);
+                    
+                    if (isPatch)
                     {
                         Debug.Log($"发现补丁资源:{asset.Name}");
                     }
                     else
                     {
-                        //移除非补丁资源
+                        //不是补丁资源 移除掉
                         bundle.Assets.RemoveAt(j);
-                        isAllChanged = false;
+                        isAllPatch = false;
                     }
                 }
 
                 if (bundle.Assets.Count > 0)
                 {
                     //是补丁包
-                    if (!isAllChanged)
+                    
+                    if (!isAllPatch)
                     {
-                        //有部分资源不是补丁资源 需要改名 否则直接用本体包的名字转正
+                        //有部分资源不是补丁资源 需要改名 否则直接用正式包的名字了
                         var part = bundle.BundleName.Split('.');
                         bundle.BundleName = $"{part[0]}_patch.{part[1]}";
                         bundle.BundleIdentifyName =
@@ -629,15 +565,59 @@ namespace CatAsset.Editor
 
             EditorUtility.ClearProgressBar();
         }
-
+        
+        /// <summary>
+        /// 是否为补丁资源
+        /// </summary>
+        private bool IsPatchAsset(string assetName)
+        {
+            //0.已经计算过状态了
+            if (assetPatchStateDict.TryGetValue(assetName, out bool isPatch))
+            {
+                return isPatch;
+            }
+            
+            //1.自身是否已变化
+            isPatch = IsChangedAsset(assetName);
+            if (isPatch)
+            {
+                assetPatchStateDict.Add(assetName,true);
+                return true;
+            }
+            
+            //2.此资源依赖的上游资源是否为补丁资源
+            //位于上游的补丁资源，其补丁性会传染给依赖链下游的所有资源
+            if (upStreamDict.TryGetValue(assetName, out var upStreamList))
+            {
+                foreach (string upStream in upStreamList)
+                {
+                    isPatch = IsPatchAsset(upStream);
+                    if (isPatch)
+                    {
+                        assetPatchStateDict.Add(assetName,true);
+                        return true;
+                    }
+                }
+            }
+            
+            //补丁性不传染给依赖链上游资源
+            //而是通过隐式依赖自动包含机制 故意冗余一份 使得补丁资源的依赖和它本身在一个资源包内
+            //以防止正式包的资源 依赖到 补丁包依赖的资源 时 丢失依赖
+            //这样就会在正式包和补丁包里各包含一份相同的依赖资源 保证正式包依赖不丢失
+            
+            //假设有D -> C -> B -> A 和 D -> E 的依赖链，且C为变化的资源
+            //那么最终会将C以及依赖C的B和A作为补丁资源，D作为C的隐式依赖包含进C的补丁包里
+            //运行时 E依赖的D 和 C依赖的D 会分别在不同的包里 保证E依赖不丢失
+            
+            assetPatchStateDict.Add(assetName,false);
+            return false;
+            
+        }
+        
         /// <summary>
         /// 是否为已变化的资源
         /// </summary>
-        private bool IsChangedAsset(string assetName, Dictionary<string, bool> assetChangeStateDict,
-            Dictionary<string, AssetCacheManifest.AssetCacheInfo> assetCacheDict,
-            Dictionary<string, AssetCacheManifest.AssetCacheInfo> curAssetCacheDict,
-            Dictionary<string, string> assetToBundle, Dictionary<string, string> cacheAssetToBundle)
-
+        private bool IsChangedAsset(string assetName)
         {
             //0.已经计算过状态了
             if (assetChangeStateDict.TryGetValue(assetName, out bool isPatch))
@@ -676,6 +656,7 @@ namespace CatAsset.Editor
             assetChangeStateDict.Add(assetName, false);
             return false;
         }
+
     }
 }
 ```
